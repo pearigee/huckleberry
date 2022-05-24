@@ -6,6 +6,7 @@ pub enum TokenType {
     RightParen,
     String(String),
     Number(f64),
+    Symbol(String),
     EndOfFile,
 }
 
@@ -69,10 +70,12 @@ impl Scanner {
             _ => {
                 if Scanner::is_digit(c) {
                     self.number();
+                } else if Scanner::is_alpha(c) {
+                    self.symbol();
                 } else {
                     error(format!("Unexpected character {:?}", c));
                 }
-            },
+            }
         }
     }
 
@@ -92,8 +95,8 @@ impl Scanner {
     }
 
     fn peek(&self) -> Option<char> {
-        if self.is_at_end() { 
-            return None; 
+        if self.is_at_end() {
+            return None;
         }
         self.source.chars().nth(self.current)
     }
@@ -124,39 +127,88 @@ impl Scanner {
 
         self.advance();
 
-        let value: String = self.source[self.start+1..self.current-1].to_string();
+        let value: String = self.source[self.start + 1..self.current - 1].to_string();
         self.add_token(TokenType::String(value));
     }
 
     fn number(&mut self) {
-        while Scanner::is_digit(self.peek()) { 
+        while Scanner::is_digit(self.peek()) {
             self.advance();
         }
 
         if self.peek() == Some('.') && Scanner::is_digit(self.peek_next()) {
             // Consume the '.'
             self.advance();
-            
+
             while Scanner::is_digit(self.peek()) {
                 self.advance();
             }
         }
 
-        let value = self.source[self.start..self.current].parse::<f64>().unwrap();
+        let value = self.source[self.start..self.current]
+            .parse::<f64>()
+            .unwrap();
         self.add_token(TokenType::Number(value));
+    }
+
+    fn symbol(&mut self) {
+        while Scanner::is_alpha_numeric(self.peek()) {
+            self.advance();
+        }
+
+        self.add_token(TokenType::Symbol(
+            self.source[self.start..self.current].to_string(),
+        ))
     }
 
     fn is_digit(c: Option<char>) -> bool {
         match c {
-          Some(value)=> value >= '0' && value <= '9',
-          _ => false
+            Some(value) => value >= '0' && value <= '9',
+            _ => false,
         }
+    }
+
+    /// Checks if the character could create a valid symbol.
+    /// This includes all basic math operators and _, !, and ?.
+    fn is_alpha(c: Option<char>) -> bool {
+        match c {
+            Some(value) => {
+                (value >= 'a' && value <= 'z')
+                    || (value >= 'A' && value <= 'Z')
+                    || value == '_'
+                    || value == '-'
+                    || value == '*'
+                    || value == '+'
+                    || value == '!'
+                    || value == '?'
+                    || value == '<'
+                    || value == '>'
+                    || value == '/'
+                    || value == '='
+            }
+            _ => false,
+        }
+    }
+
+    fn is_alpha_numeric(c: Option<char>) -> bool {
+        Scanner::is_alpha(c) || Scanner::is_digit(c)
     }
 }
 
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_tokenizes_fn_call() {
+        let result = scan("(+ 1 2)");
+
+        assert_eq!(result[0].token_type, TokenType::LeftParen);
+        assert_eq!(result[1].token_type, TokenType::Symbol("+".to_string()));
+        assert_eq!(result[2].token_type, TokenType::Number(1.));
+        assert_eq!(result[3].token_type, TokenType::Number(2.));
+        assert_eq!(result[4].token_type, TokenType::RightParen);
+    }
+    
     #[test]
     fn test_tokenizes_parens() {
         let result = scan("()");
@@ -170,10 +222,16 @@ mod tests {
 
     #[test]
     fn test_tokenizes_strings() {
-        let result =  scan("\"Test string 1\" \"Test\nstring 2\"");
-        
-        assert_eq!(result[0].token_type, TokenType::String("Test string 1".to_string()));
-        assert_eq!(result[1].token_type, TokenType::String("Test\nstring 2".to_string()));
+        let result = scan("\"Test string 1\" \"Test\nstring 2\"");
+
+        assert_eq!(
+            result[0].token_type,
+            TokenType::String("Test string 1".to_string())
+        );
+        assert_eq!(
+            result[1].token_type,
+            TokenType::String("Test\nstring 2".to_string())
+        );
     }
 
     #[test]
@@ -183,6 +241,20 @@ mod tests {
         assert_eq!(result[0].token_type, TokenType::Number(1.));
         assert_eq!(result[1].token_type, TokenType::Number(2.34));
         assert_eq!(result[2].token_type, TokenType::Number(56.78));
+    }
+
+    #[test]
+    fn test_tokenizes_symbols() {
+        let input = "+ - / * <= >= = ? ! is_symbol? set! hello";
+        let tokens = scan(input);
+        let names = input.split(' ').collect::<Vec<&str>>();
+
+        for i in 0..tokens.len() - 1 {
+            assert_eq!(
+                tokens[i].token_type,
+                TokenType::Symbol(names[i].to_string())
+            )
+        }
     }
 
     #[test]
