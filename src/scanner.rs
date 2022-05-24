@@ -26,8 +26,7 @@ struct Scanner {
 }
 
 pub fn scan(input: &str) -> Vec<Token> {
-    let mut scanner = Scanner::new(input);
-    scanner.scan_tokens().to_vec()
+    Scanner::new(input).scan_tokens().to_vec()
 }
 
 impl Scanner {
