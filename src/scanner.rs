@@ -5,6 +5,7 @@ pub enum TokenType {
     LeftParen,
     RightParen,
     String(String),
+    Number(f64),
     EndOfFile,
 }
 
@@ -65,7 +66,13 @@ impl Scanner {
             Some('"') => self.string(),
             Some(' ') | Some('\r') | Some('\t') => (),
             Some('\n') => self.line = self.line + 1,
-            _ => error(format!("Unexpected character {:?}", c)),
+            _ => {
+                if Scanner::is_digit(c) {
+                    self.number();
+                } else {
+                    error(format!("Unexpected character {:?}", c));
+                }
+            },
         }
     }
 
@@ -91,6 +98,14 @@ impl Scanner {
         self.source.chars().nth(self.current)
     }
 
+    fn peek_next(&self) -> Option<char> {
+        let next = self.current + 1;
+        if next >= self.source_length {
+            return None;
+        }
+        self.source.chars().nth(next)
+    }
+
     fn is_at_end(&self) -> bool {
         self.current >= self.source_length
     }
@@ -112,13 +127,38 @@ impl Scanner {
         let value: String = self.source[self.start+1..self.current-1].to_string();
         self.add_token(TokenType::String(value));
     }
+
+    fn number(&mut self) {
+        while Scanner::is_digit(self.peek()) { 
+            self.advance();
+        }
+
+        if self.peek() == Some('.') && Scanner::is_digit(self.peek_next()) {
+            // Consume the '.'
+            self.advance();
+            
+            while Scanner::is_digit(self.peek()) {
+                self.advance();
+            }
+        }
+
+        let value = self.source[self.start..self.current].parse::<f64>().unwrap();
+        self.add_token(TokenType::Number(value));
+    }
+
+    fn is_digit(c: Option<char>) -> bool {
+        match c {
+          Some(value)=> value >= '0' && value <= '9',
+          _ => false
+        }
+    }
 }
 
 mod tests {
     use super::*;
 
     #[test]
-    fn test_simple_tokenization() {
+    fn test_tokenizes_parens() {
         let result = scan("()");
 
         assert_eq!(result[0].token_type, TokenType::LeftParen);
@@ -134,6 +174,15 @@ mod tests {
         
         assert_eq!(result[0].token_type, TokenType::String("Test string 1".to_string()));
         assert_eq!(result[1].token_type, TokenType::String("Test\nstring 2".to_string()));
+    }
+
+    #[test]
+    fn test_tokenizes_numbers() {
+        let result = scan("1 2.34 56.78");
+
+        assert_eq!(result[0].token_type, TokenType::Number(1.));
+        assert_eq!(result[1].token_type, TokenType::Number(2.34));
+        assert_eq!(result[2].token_type, TokenType::Number(56.78));
     }
 
     #[test]
