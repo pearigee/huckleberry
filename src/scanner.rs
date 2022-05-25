@@ -12,9 +12,9 @@ pub enum TokenType {
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    token_type: TokenType,
-    lexeme: String,
-    line: i32,
+    pub token_type: TokenType,
+    pub lexeme: String,
+    pub line: i32,
 }
 
 #[derive(Debug)]
@@ -208,7 +208,7 @@ mod tests {
         assert_eq!(result[3].token_type, TokenType::Number(2.));
         assert_eq!(result[4].token_type, TokenType::RightParen);
     }
-    
+
     #[test]
     fn test_tokenizes_parens() {
         let result = scan("()");
