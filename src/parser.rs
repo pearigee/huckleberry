@@ -9,16 +9,11 @@ use crate::{
 /// atom => number | string | symbol
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Value {
+pub enum Expression {
+    List(Box<Cons>),
     Number(f64),
     String(String),
     Symbol(String),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Expression {
-    Atom(Value),
-    List(Box<Cons>),
 }
 
 impl Expression {
@@ -42,10 +37,8 @@ impl Cons {
     }
 }
 
-#[derive(Debug)]
 struct Parser {
     tokens: Vec<Token>,
-    tokens_length: usize,
     current: usize,
     debug: bool,
 }
@@ -59,7 +52,6 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
         Parser {
             tokens: tokens.to_owned(),
-            tokens_length: tokens.len(),
             current: 0,
             debug: true,
         }
@@ -84,15 +76,15 @@ impl Parser {
             TokenType::LeftParen => Expression::List(Box::new(self.parse_list())),
             TokenType::Number(value) => {
                 self.advance();
-                Expression::Atom(Value::Number(value))
+                Expression::Number(value)
             }
             TokenType::String(value) => {
                 self.advance();
-                Expression::Atom(Value::String(value.to_owned()))
+                Expression::String(value.to_owned())
             }
             TokenType::Symbol(value) => {
                 self.advance();
-                Expression::Atom(Value::Symbol(value.to_owned()))
+                Expression::Symbol(value.to_owned())
             }
             _ => error(format!(
                 "Unexpected token {:?} in expression at line {}",
@@ -167,8 +159,6 @@ impl Parser {
 }
 
 mod tests {
-    use crate::scanner::scan;
-
     use super::*;
 
     #[test]
@@ -178,10 +168,10 @@ mod tests {
         assert_eq!(
             result[0].list_value(),
             Cons::new(
-                Expression::Atom(Value::Symbol("+".to_string())),
+                Expression::Symbol("+".to_string()),
                 vec![
-                    Expression::Atom(Value::Number(1.)),
-                    Expression::Atom(Value::Number(1.))
+                    Expression::Number(1.),
+                    Expression::Number(1.)
                 ]
             )
         );
