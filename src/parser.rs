@@ -165,4 +165,23 @@ mod tests {
             )))
         );
     }
+
+    #[test]
+    fn test_parses_nested_expression() {
+        let result = parse("(+ 1.25 (/ 3 4))");
+
+        assert_eq!(
+            result[0],
+            Expression::List(Box::new(Cons::new(
+                Expression::Symbol("+".to_string()),
+                vec![
+                    Expression::Number(1.25),
+                    Expression::List(Box::new(Cons::new(
+                        Expression::Symbol("/".to_string()),
+                        vec![Expression::Number(3.), Expression::Number(4.)]
+                    )))
+                ]
+            )))
+        );
+    }
 }
