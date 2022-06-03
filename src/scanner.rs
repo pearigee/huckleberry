@@ -4,16 +4,20 @@ use crate::error::error;
 pub enum TokenType {
     LeftParen,
     RightParen,
+    LeftCurly,
+    RightCurly,
+    LeftSquare,
+    RightSquare,
     String(String),
     Number(f64),
     Symbol(String),
+    Keyword(String),
     EndOfFile,
 }
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
-    pub lexeme: String,
     pub line: i32,
 }
 
@@ -51,7 +55,6 @@ impl Scanner {
 
         self.tokens.push(Token {
             token_type: TokenType::EndOfFile,
-            lexeme: String::new(),
             line: self.line,
         });
 
@@ -64,7 +67,12 @@ impl Scanner {
         match c {
             Some('(') => self.add_token(TokenType::LeftParen),
             Some(')') => self.add_token(TokenType::RightParen),
+            Some('{') => self.add_token(TokenType::LeftCurly),
+            Some('}') => self.add_token(TokenType::RightCurly),
+            Some('[') => self.add_token(TokenType::LeftSquare),
+            Some(']') => self.add_token(TokenType::RightSquare),
             Some('"') => self.string(),
+            Some(':') => self.keyword(),
             Some(' ') | Some('\r') | Some('\t') => (),
             Some('\n') => self.line = self.line + 1,
             _ => {
@@ -80,10 +88,8 @@ impl Scanner {
     }
 
     fn add_token(&mut self, token_type: TokenType) {
-        let text = &self.source[self.start..self.current];
         self.tokens.push(Token {
             token_type: token_type,
-            lexeme: text.to_string(),
             line: self.line,
         });
     }
@@ -161,6 +167,16 @@ impl Scanner {
         ))
     }
 
+    fn keyword(&mut self) {
+        while Scanner::is_alpha_numeric(self.peek()) {
+            self.advance();
+        }
+
+        self.add_token(TokenType::Keyword(
+            self.source[self.start..self.current].to_string(),
+        ))
+    }
+
     fn is_digit(c: Option<char>) -> bool {
         match c {
             Some(value) => value >= '0' && value <= '9',
@@ -195,6 +211,7 @@ impl Scanner {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -214,10 +231,40 @@ mod tests {
         let result = scan("()");
 
         assert_eq!(result[0].token_type, TokenType::LeftParen);
-        assert_eq!(result[0].lexeme, "(");
         assert_eq!(result[1].token_type, TokenType::RightParen);
-        assert_eq!(result[1].lexeme, ")");
         assert_eq!(result[2].token_type, TokenType::EndOfFile);
+    }
+
+    #[test]
+    fn test_tokenizes_curly_braces() {
+        let result = scan("{}");
+
+        assert_eq!(result[0].token_type, TokenType::LeftCurly);
+        assert_eq!(result[1].token_type, TokenType::RightCurly);
+        assert_eq!(result[2].token_type, TokenType::EndOfFile);
+    }
+
+    #[test]
+    fn test_tokenizes_square_braces() {
+        let result = scan("[]");
+
+        assert_eq!(result[0].token_type, TokenType::LeftSquare);
+        assert_eq!(result[1].token_type, TokenType::RightSquare);
+        assert_eq!(result[2].token_type, TokenType::EndOfFile);
+    }
+
+    #[test]
+    fn test_tokenizes_keywords() {
+        let result = scan(":hello :world");
+
+        assert_eq!(
+            result[0].token_type,
+            TokenType::Keyword(":hello".to_string())
+        );
+        assert_eq!(
+            result[1].token_type,
+            TokenType::Keyword(":world".to_string())
+        );
     }
 
     #[test]

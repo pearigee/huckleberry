@@ -16,15 +16,6 @@ pub enum Expression {
     Symbol(String),
 }
 
-impl Expression {
-    pub fn list_value(&self) -> Cons {
-        match self {
-            Expression::List(value) => (**value).to_owned(),
-            _ => error(format!("Expression {:?} is not a list", self)),
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cons {
     first: Expression,
@@ -158,6 +149,7 @@ impl Parser {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -166,14 +158,11 @@ mod tests {
         let result = parse("(+ 1 1)");
 
         assert_eq!(
-            result[0].list_value(),
-            Cons::new(
+            result[0],
+            Expression::List(Box::new(Cons::new(
                 Expression::Symbol("+".to_string()),
-                vec![
-                    Expression::Number(1.),
-                    Expression::Number(1.)
-                ]
-            )
+                vec![Expression::Number(1.), Expression::Number(1.)]
+            )))
         );
     }
 }
