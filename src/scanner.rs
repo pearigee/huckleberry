@@ -227,6 +227,18 @@ mod tests {
     }
 
     #[test]
+    fn test_tokenizes_values_without_whitespace() {
+        let result = scan("(+ abc\":hello\":hello)");
+
+        assert_eq!(result[0].token_type, TokenType::LeftParen);
+        assert_eq!(result[1].token_type, TokenType::Symbol("+".to_string()));
+        assert_eq!(result[2].token_type, TokenType::Symbol("abc".to_string()));
+        assert_eq!(result[3].token_type, TokenType::String(":hello".to_string()));
+        assert_eq!(result[4].token_type, TokenType::Keyword(":hello".to_string()));
+        assert_eq!(result[5].token_type, TokenType::RightParen);
+    }
+
+    #[test]
     fn test_tokenizes_parens() {
         let result = scan("()");
 
