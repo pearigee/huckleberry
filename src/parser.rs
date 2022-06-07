@@ -3,11 +3,6 @@ use crate::{
     scanner::{scan, Token, TokenType},
 };
 
-/// program => list*
-/// expression => atom | list
-/// list => "( expression* )"
-/// atom => number | string | symbol
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
     List(Vec<Expression>),
@@ -65,11 +60,11 @@ impl Parser {
             }
             TokenType::String(value) => {
                 self.advance();
-                Expression::String(value.to_owned())
+                Expression::String(value)
             }
             TokenType::Symbol(value) => {
                 self.advance();
-                Expression::Symbol(value.to_owned())
+                Expression::Symbol(value)
             }
             _ => error(format!(
                 "Unexpected token {:?} in expression at line {}",
