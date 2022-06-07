@@ -12,6 +12,7 @@ pub enum TokenType {
     Number(f64),
     Symbol(String),
     Keyword(String),
+    Boolean(bool),
     EndOfFile,
 }
 
@@ -79,6 +80,7 @@ impl Scanner {
                 if Scanner::is_digit(c) {
                     self.number();
                 } else if Scanner::is_alpha(c) {
+                    // This includes booleans.
                     self.symbol();
                 } else {
                     error(format!("Unexpected character {:?}", c));
@@ -162,9 +164,17 @@ impl Scanner {
             self.advance();
         }
 
-        self.add_token(TokenType::Symbol(
-            self.source[self.start..self.current].to_string(),
-        ))
+        let result = self.source[self.start..self.current].to_string();
+
+        if result == "true" {
+            self.add_token(TokenType::Boolean(true))
+        } else if result == "false" {
+            self.add_token(TokenType::Boolean(false))
+        } else {
+            self.add_token(TokenType::Symbol(
+                self.source[self.start..self.current].to_string(),
+            ))
+        }
     }
 
     fn keyword(&mut self) {
@@ -233,8 +243,14 @@ mod tests {
         assert_eq!(result[0].token_type, TokenType::LeftParen);
         assert_eq!(result[1].token_type, TokenType::Symbol("+".to_string()));
         assert_eq!(result[2].token_type, TokenType::Symbol("abc".to_string()));
-        assert_eq!(result[3].token_type, TokenType::String(":hello".to_string()));
-        assert_eq!(result[4].token_type, TokenType::Keyword(":hello".to_string()));
+        assert_eq!(
+            result[3].token_type,
+            TokenType::String(":hello".to_string())
+        );
+        assert_eq!(
+            result[4].token_type,
+            TokenType::Keyword(":hello".to_string())
+        );
         assert_eq!(result[5].token_type, TokenType::RightParen);
     }
 
@@ -262,6 +278,15 @@ mod tests {
 
         assert_eq!(result[0].token_type, TokenType::LeftSquare);
         assert_eq!(result[1].token_type, TokenType::RightSquare);
+        assert_eq!(result[2].token_type, TokenType::EndOfFile);
+    }
+
+    #[test]
+    fn test_tokenizes_booleans() {
+        let result = scan("true false");
+
+        assert_eq!(result[0].token_type, TokenType::Boolean(true));
+        assert_eq!(result[1].token_type, TokenType::Boolean(false));
         assert_eq!(result[2].token_type, TokenType::EndOfFile);
     }
 

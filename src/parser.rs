@@ -10,22 +10,11 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expression {
-    List(Box<Cons>),
+    List(Vec<Expression>),
     Number(f64),
     String(String),
     Symbol(String),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Cons {
-    first: Expression,
-    rest: Vec<Expression>,
-}
-
-impl Cons {
-    pub fn new(first: Expression, rest: Vec<Expression>) -> Cons {
-        Cons { first, rest }
-    }
+    Vector(Vec<Expression>),
 }
 
 struct Parser {
@@ -64,7 +53,12 @@ impl Parser {
         let token = self.peek();
 
         match token.token_type {
-            TokenType::LeftParen => Expression::List(Box::new(self.parse_list())),
+            TokenType::LeftParen => {
+                Expression::List(self.parse_vector(TokenType::LeftParen, TokenType::RightParen))
+            }
+            TokenType::LeftSquare => {
+                Expression::Vector(self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare))
+            }
             TokenType::Number(value) => {
                 self.advance();
                 Expression::Number(value)
@@ -84,32 +78,25 @@ impl Parser {
         }
     }
 
-    fn parse_list(&mut self) -> Cons {
-        let opening_paren = self.match_token(&TokenType::LeftParen);
+    fn parse_vector(&mut self, open_token: TokenType, close_token: TokenType) -> Vec<Expression> {
+        self.match_token(open_token);
         let mut expressions: Vec<Expression> = Vec::new();
-        while !self.check(&TokenType::RightParen) {
+        while !self.check(&close_token) {
             expressions.push(self.parse_expression());
         }
-        self.match_token(&TokenType::RightParen);
+        self.match_token(close_token);
 
-        self.debug(format!("LIST {:?}", expressions));
-        if let Some((first, rest)) = expressions.split_first() {
-            Cons {
-                first: first.to_owned(),
-                rest: rest.to_owned(),
-            }
-        } else {
-            error(format!("Empty list at {}", opening_paren.line))
-        }
+        self.debug(format!("VECTOR {:?}", expressions));
+        expressions
     }
 
-    fn match_token(&mut self, token_type: &TokenType) -> Token {
-        if self.check(token_type) {
+    fn match_token(&mut self, token_type: TokenType) -> Token {
+        if self.check(&token_type) {
             return self.advance();
         }
         error(format!(
             "Expected {:?} at line {:?}",
-            token_type,
+            &token_type,
             self.peek().line
         ))
     }
@@ -159,10 +146,11 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::List(Box::new(Cons::new(
+            Expression::List(vec![
                 Expression::Symbol("+".to_string()),
-                vec![Expression::Number(1.), Expression::Number(1.)]
-            )))
+                Expression::Number(1.),
+                Expression::Number(1.)
+            ])
         );
     }
 
@@ -172,16 +160,28 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::List(Box::new(Cons::new(
+            Expression::List(vec![
                 Expression::Symbol("+".to_string()),
-                vec![
-                    Expression::Number(1.25),
-                    Expression::List(Box::new(Cons::new(
-                        Expression::Symbol("/".to_string()),
-                        vec![Expression::Number(3.), Expression::Number(4.)]
-                    )))
-                ]
-            )))
+                Expression::Number(1.25),
+                Expression::List(vec![
+                    Expression::Symbol("/".to_string()),
+                    Expression::Number(3.),
+                    Expression::Number(4.)
+                ])
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parses_vector() {
+        let result = parse("[1 2]");
+
+        assert_eq!(
+            result[0],
+            Expression::Vector(vec![
+                Expression::Number(1.),
+                Expression::Number(2.)
+            ])
         );
     }
 }
