@@ -7,6 +7,7 @@ use crate::{
 pub enum Expression {
     List(Vec<Expression>),
     Number(f64),
+    Boolean(bool),
     String(String),
     Symbol(String),
     Vector(Vec<Expression>),
@@ -57,6 +58,10 @@ impl Parser {
             TokenType::Number(value) => {
                 self.advance();
                 Expression::Number(value)
+            }
+            TokenType::Boolean(value) => {
+                self.advance();
+                Expression::Boolean(value)
             }
             TokenType::String(value) => {
                 self.advance();
@@ -169,13 +174,13 @@ mod tests {
 
     #[test]
     fn test_parses_vector() {
-        let result = parse("[1 2]");
+        let result = parse("[1 true]");
 
         assert_eq!(
             result[0],
             Expression::Vector(vec![
                 Expression::Number(1.),
-                Expression::Number(2.)
+                Expression::Boolean(true)
             ])
         );
     }
