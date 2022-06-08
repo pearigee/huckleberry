@@ -1,16 +1,28 @@
+use std::collections::BTreeMap;
+
+use ordered_float::OrderedFloat;
+
 use crate::{
     error::error,
     scanner::{scan, Token, TokenType},
 };
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Expression {
     List(Vec<Expression>),
-    Number(f64),
+    Number(OrderedFloat<f64>),
     Boolean(bool),
     String(String),
+    Keyword(String),
     Symbol(String),
     Vector(Vec<Expression>),
+    Map(BTreeMap<Expression, Expression>),
+}
+
+impl Expression {
+    fn from_f64(number: f64) -> Expression {
+        Expression::Number(OrderedFloat(number))
+    }
 }
 
 struct Parser {
@@ -55,9 +67,10 @@ impl Parser {
             TokenType::LeftSquare => {
                 Expression::Vector(self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare))
             }
+            TokenType::LeftCurly => Expression::Map(self.parse_map()),
             TokenType::Number(value) => {
                 self.advance();
-                Expression::Number(value)
+                Expression::from_f64(value)
             }
             TokenType::Boolean(value) => {
                 self.advance();
@@ -66,6 +79,10 @@ impl Parser {
             TokenType::String(value) => {
                 self.advance();
                 Expression::String(value)
+            }
+            TokenType::Keyword(value) => {
+                self.advance();
+                Expression::Keyword(value)
             }
             TokenType::Symbol(value) => {
                 self.advance();
@@ -88,6 +105,28 @@ impl Parser {
 
         self.debug(format!("VECTOR {:?}", expressions));
         expressions
+    }
+
+    fn parse_map(&mut self) -> BTreeMap<Expression, Expression> {
+        let initial_token = self.match_token(TokenType::LeftCurly);
+        let mut expressions: Vec<Expression> = Vec::new();
+        while !self.check(&TokenType::RightCurly) {
+            expressions.push(self.parse_expression());
+        }
+        self.match_token(TokenType::RightCurly);
+
+        if expressions.len() % 2 == 0 {
+            let mut map: BTreeMap<Expression, Expression> = BTreeMap::new();
+            for pair in expressions.chunks(2) {
+                map.insert(pair[0].to_owned(), pair[1].to_owned());
+            }
+            map
+        } else {
+            error(format!(
+                "A map must have an even number of elements! Map opened at line {}.",
+                initial_token.line
+            ));
+        }
     }
 
     fn match_token(&mut self, token_type: TokenType) -> Token {
@@ -148,8 +187,8 @@ mod tests {
             result[0],
             Expression::List(vec![
                 Expression::Symbol("+".to_string()),
-                Expression::Number(1.),
-                Expression::Number(1.)
+                Expression::from_f64(1.),
+                Expression::from_f64(1.)
             ])
         );
     }
@@ -162,11 +201,11 @@ mod tests {
             result[0],
             Expression::List(vec![
                 Expression::Symbol("+".to_string()),
-                Expression::Number(1.25),
+                Expression::from_f64(1.25),
                 Expression::List(vec![
                     Expression::Symbol("/".to_string()),
-                    Expression::Number(3.),
-                    Expression::Number(4.)
+                    Expression::from_f64(3.),
+                    Expression::from_f64(4.)
                 ])
             ])
         );
@@ -178,10 +217,26 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::Vector(vec![
-                Expression::Number(1.),
-                Expression::Boolean(true)
-            ])
+            Expression::Vector(vec![Expression::from_f64(1.), Expression::Boolean(true)])
+        );
+    }
+
+    #[test]
+    fn test_parses_map() {
+        let result = parse("{:key \"value\" [true] false}");
+
+        assert_eq!(
+            result[0],
+            Expression::Map(BTreeMap::from([
+                (
+                    Expression::Keyword(":key".to_string()),
+                    Expression::String("value".to_string())
+                ),
+                (
+                    Expression::Vector(vec![Expression::Boolean(true)]),
+                    Expression::Boolean(false)
+                ),
+            ]))
         );
     }
 }
