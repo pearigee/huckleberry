@@ -8,20 +8,52 @@ use crate::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Expression {
-    List(Vec<Expression>),
+pub enum Expr {
+    List(Vec<Expr>),
     Number(OrderedFloat<f64>),
     Boolean(bool),
     String(String),
     Keyword(String),
     Symbol(String),
-    Vector(Vec<Expression>),
-    Map(BTreeMap<Expression, Expression>),
+    Vector(Vec<Expr>),
+    Map(BTreeMap<Expr, Expr>),
 }
 
-impl Expression {
-    fn from_f64(number: f64) -> Expression {
-        Expression::Number(OrderedFloat(number))
+impl Expr {
+    pub fn number(value: f64) -> Expr {
+        Expr::Number(OrderedFloat(value))
+    }
+
+    pub fn boolean(value: bool) -> Expr {
+        Expr::Boolean(value)
+    }
+
+    pub fn string(value: &str) -> Expr {
+        Expr::String(value.to_string())
+    }
+
+    pub fn symbol(value: &str) -> Expr {
+        Expr::Symbol(value.to_string())
+    }
+
+    pub fn keyword(value: &str) -> Expr {
+        Expr::Keyword(value.to_string())
+    }
+
+    pub fn vector(exprs: &[Expr]) -> Expr {
+        Expr::Vector(exprs.to_vec())
+    }
+
+    pub fn list(exprs: &[Expr]) -> Expr {
+        Expr::List(exprs.to_vec())
+    }
+
+    pub fn map(exprs: &[(Expr, Expr)]) -> Expr {
+       let mut map = BTreeMap::new();
+       for pair in exprs.iter() {
+           map.insert(pair.0.to_owned(), pair.1.to_owned());
+       }
+       Expr::Map(map)
     }
 }
 
@@ -31,7 +63,7 @@ struct Parser {
     debug: bool,
 }
 
-pub fn parse(input: &str) -> Vec<Expression> {
+pub fn parse(input: &str) -> Vec<Expr> {
     let tokens = scan(input);
     Parser::new(tokens).parse()
 }
@@ -45,48 +77,48 @@ impl Parser {
         }
     }
 
-    fn parse(&mut self) -> Vec<Expression> {
+    fn parse(&mut self) -> Vec<Expr> {
         self.parse_program()
     }
 
-    fn parse_program(&mut self) -> Vec<Expression> {
-        let mut program: Vec<Expression> = Vec::new();
+    fn parse_program(&mut self) -> Vec<Expr> {
+        let mut program: Vec<Expr> = Vec::new();
         while !self.is_at_end() {
             program.push(self.parse_expression());
         }
         program
     }
 
-    fn parse_expression(&mut self) -> Expression {
+    fn parse_expression(&mut self) -> Expr {
         let token = self.peek();
 
         match token.token_type {
             TokenType::LeftParen => {
-                Expression::List(self.parse_vector(TokenType::LeftParen, TokenType::RightParen))
+                Expr::List(self.parse_vector(TokenType::LeftParen, TokenType::RightParen))
             }
             TokenType::LeftSquare => {
-                Expression::Vector(self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare))
+                Expr::Vector(self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare))
             }
-            TokenType::LeftCurly => Expression::Map(self.parse_map()),
+            TokenType::LeftCurly => Expr::Map(self.parse_map()),
             TokenType::Number(value) => {
                 self.advance();
-                Expression::from_f64(value)
+                Expr::number(value)
             }
             TokenType::Boolean(value) => {
                 self.advance();
-                Expression::Boolean(value)
+                Expr::Boolean(value)
             }
             TokenType::String(value) => {
                 self.advance();
-                Expression::String(value)
+                Expr::String(value)
             }
             TokenType::Keyword(value) => {
                 self.advance();
-                Expression::Keyword(value)
+                Expr::Keyword(value)
             }
             TokenType::Symbol(value) => {
                 self.advance();
-                Expression::Symbol(value)
+                Expr::Symbol(value)
             }
             _ => error(format!(
                 "Unexpected token {:?} in expression at line {}",
@@ -95,9 +127,9 @@ impl Parser {
         }
     }
 
-    fn parse_vector(&mut self, open_token: TokenType, close_token: TokenType) -> Vec<Expression> {
+    fn parse_vector(&mut self, open_token: TokenType, close_token: TokenType) -> Vec<Expr> {
         self.match_token(open_token);
-        let mut expressions: Vec<Expression> = Vec::new();
+        let mut expressions: Vec<Expr> = Vec::new();
         while !self.check(&close_token) {
             expressions.push(self.parse_expression());
         }
@@ -107,16 +139,16 @@ impl Parser {
         expressions
     }
 
-    fn parse_map(&mut self) -> BTreeMap<Expression, Expression> {
+    fn parse_map(&mut self) -> BTreeMap<Expr, Expr> {
         let initial_token = self.match_token(TokenType::LeftCurly);
-        let mut expressions: Vec<Expression> = Vec::new();
+        let mut expressions: Vec<Expr> = Vec::new();
         while !self.check(&TokenType::RightCurly) {
             expressions.push(self.parse_expression());
         }
         self.match_token(TokenType::RightCurly);
 
         if expressions.len() % 2 == 0 {
-            let mut map: BTreeMap<Expression, Expression> = BTreeMap::new();
+            let mut map: BTreeMap<Expr, Expr> = BTreeMap::new();
             for pair in expressions.chunks(2) {
                 map.insert(pair[0].to_owned(), pair[1].to_owned());
             }
@@ -185,10 +217,10 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::List(vec![
-                Expression::Symbol("+".to_string()),
-                Expression::from_f64(1.),
-                Expression::from_f64(1.)
+            Expr::list(&[
+                Expr::symbol("+"),
+                Expr::number(1.),
+                Expr::number(1.)
             ])
         );
     }
@@ -199,13 +231,13 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::List(vec![
-                Expression::Symbol("+".to_string()),
-                Expression::from_f64(1.25),
-                Expression::List(vec![
-                    Expression::Symbol("/".to_string()),
-                    Expression::from_f64(3.),
-                    Expression::from_f64(4.)
+            Expr::list(&[
+                Expr::symbol("+"),
+                Expr::number(1.25),
+                Expr::list(&[
+                    Expr::symbol("/"),
+                    Expr::number(3.),
+                    Expr::number(4.)
                 ])
             ])
         );
@@ -217,7 +249,7 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::Vector(vec![Expression::from_f64(1.), Expression::Boolean(true)])
+            Expr::vector(&[Expr::number(1.), Expr::boolean(true)])
         );
     }
 
@@ -227,16 +259,16 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expression::Map(BTreeMap::from([
+            Expr::map(&[
                 (
-                    Expression::Keyword(":key".to_string()),
-                    Expression::String("value".to_string())
+                    Expr::keyword(":key"),
+                    Expr::string("value")
                 ),
                 (
-                    Expression::Vector(vec![Expression::Boolean(true)]),
-                    Expression::Boolean(false)
+                    Expr::vector(&[Expr::boolean(true)]),
+                    Expr::boolean(false)
                 ),
-            ]))
+            ])
         );
     }
 }
