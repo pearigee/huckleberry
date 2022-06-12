@@ -2,31 +2,31 @@ use std::collections::BTreeMap;
 
 use crate::parser::Expr;
 
-struct Environment<'a> {
+pub struct Environment<'a> {
     vars: BTreeMap<String, Expr>,
     enclosing: Option<&'a Environment<'a>>,
 }
 
 impl<'a> Environment<'a> {
-    fn new() -> Environment<'a> {
+    pub fn new() -> Environment<'a> {
         Environment {
             vars: BTreeMap::new(),
             enclosing: None,
         }
     }
 
-    fn enclosing(environment: &'a Environment) -> Environment<'a> {
+    pub fn extend(environment: &'a Environment) -> Environment<'a> {
         Environment {
             vars: BTreeMap::new(),
             enclosing: Some(environment),
         }
     }
 
-    fn define(&mut self, key: &str, value: Expr) {
+    pub fn define(&mut self, key: &str, value: Expr) {
         self.vars.insert(key.to_string(), value);
     }
 
-    fn get(&self, key: &str) -> Option<&Expr> {
+    pub fn get(&self, key: &str) -> Option<&Expr> {
         let result = self.vars.get(key);
         if result.is_none() && self.enclosing.is_some() {
             return self.enclosing.unwrap().get(key);
@@ -69,7 +69,7 @@ mod tests {
         env.define("b", Expr::string("b"));
 
         {
-            let mut extended_env = Environment::enclosing(&env);
+            let mut extended_env = Environment::extend(&env);
             extended_env.define("a", Expr::string("a_shadow"));
 
             assert_eq!(
