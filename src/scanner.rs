@@ -13,6 +13,7 @@ pub enum TokenType {
     Symbol(String),
     Keyword(String),
     Boolean(bool),
+    Nil,
     EndOfFile,
 }
 
@@ -80,7 +81,7 @@ impl Scanner {
                 if Scanner::is_digit(c) {
                     self.number();
                 } else if Scanner::is_alpha(c) {
-                    // This includes booleans.
+                    // This includes booleans and nil.
                     self.symbol();
                 } else {
                     error(format!("Unexpected character {:?}", c));
@@ -170,6 +171,8 @@ impl Scanner {
             self.add_token(TokenType::Boolean(true))
         } else if result == "false" {
             self.add_token(TokenType::Boolean(false))
+        } else if result == "nil" {
+            self.add_token(TokenType::Nil)
         } else {
             self.add_token(TokenType::Symbol(
                 self.source[self.start..self.current].to_string(),
@@ -301,6 +304,16 @@ mod tests {
         assert_eq!(
             result[1].token_type,
             TokenType::Keyword(":world".to_string())
+        );
+    }
+
+    #[test]
+    fn test_tokenizes_nil() {
+        let result = scan("nil");
+
+        assert_eq!(
+            result[0].token_type,
+            TokenType::Nil,
         );
     }
 

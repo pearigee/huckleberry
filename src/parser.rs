@@ -17,6 +17,7 @@ pub enum Expr {
     Symbol(String),
     Vector(Vec<Expr>),
     Map(BTreeMap<Expr, Expr>),
+    Nil,
 }
 
 impl Expr {
@@ -46,6 +47,10 @@ impl Expr {
 
     pub fn list(exprs: &[Expr]) -> Expr {
         Expr::List(exprs.to_vec())
+    }
+
+    pub fn nil() -> Expr {
+        Expr::Nil
     }
 
     pub fn map(exprs: &[(Expr, Expr)]) -> Expr {
@@ -119,6 +124,10 @@ impl Parser {
             TokenType::Symbol(value) => {
                 self.advance();
                 Expr::Symbol(value)
+            }
+            TokenType::Nil => {
+                self.advance();
+                Expr::Nil
             }
             _ => error(format!(
                 "Unexpected token {:?} in expression at line {}",
@@ -245,11 +254,11 @@ mod tests {
 
     #[test]
     fn test_parses_vector() {
-        let result = parse("[1 true]");
+        let result = parse("[1 true nil]");
 
         assert_eq!(
             result[0],
-            Expr::vector(&[Expr::number(1.), Expr::boolean(true)])
+            Expr::vector(&[Expr::number(1.), Expr::boolean(true), Expr::nil()])
         );
     }
 
