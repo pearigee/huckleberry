@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::parser::Expr;
+use crate::expr::Expr;
 
 pub struct Environment<'a> {
     vars: BTreeMap<String, Expr>,
