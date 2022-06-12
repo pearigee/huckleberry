@@ -311,10 +311,7 @@ mod tests {
     fn test_tokenizes_nil() {
         let result = scan("nil");
 
-        assert_eq!(
-            result[0].token_type,
-            TokenType::Nil,
-        );
+        assert_eq!(result[0].token_type, TokenType::Nil,);
     }
 
     #[test]

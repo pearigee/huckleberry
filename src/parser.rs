@@ -54,11 +54,11 @@ impl Expr {
     }
 
     pub fn map(exprs: &[(Expr, Expr)]) -> Expr {
-       let mut map = BTreeMap::new();
-       for pair in exprs.iter() {
-           map.insert(pair.0.to_owned(), pair.1.to_owned());
-       }
-       Expr::Map(map)
+        let mut map = BTreeMap::new();
+        for pair in exprs.iter() {
+            map.insert(pair.0.to_owned(), pair.1.to_owned());
+        }
+        Expr::Map(map)
     }
 }
 
@@ -226,11 +226,7 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expr::list(&[
-                Expr::symbol("+"),
-                Expr::number(1.),
-                Expr::number(1.)
-            ])
+            Expr::list(&[Expr::symbol("+"), Expr::number(1.), Expr::number(1.)])
         );
     }
 
@@ -243,11 +239,7 @@ mod tests {
             Expr::list(&[
                 Expr::symbol("+"),
                 Expr::number(1.25),
-                Expr::list(&[
-                    Expr::symbol("/"),
-                    Expr::number(3.),
-                    Expr::number(4.)
-                ])
+                Expr::list(&[Expr::symbol("/"), Expr::number(3.), Expr::number(4.)])
             ])
         );
     }
@@ -269,14 +261,8 @@ mod tests {
         assert_eq!(
             result[0],
             Expr::map(&[
-                (
-                    Expr::keyword(":key"),
-                    Expr::string("value")
-                ),
-                (
-                    Expr::vector(&[Expr::boolean(true)]),
-                    Expr::boolean(false)
-                ),
+                (Expr::keyword(":key"), Expr::string("value")),
+                (Expr::vector(&[Expr::boolean(true)]), Expr::boolean(false)),
             ])
         );
     }

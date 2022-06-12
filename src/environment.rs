@@ -44,10 +44,7 @@ mod tests {
         let mut env = Environment::new();
         env.define("key", Expr::string("value"));
 
-        assert_eq!(
-            env.get("key").unwrap(),
-            &Expr::string("value")
-        );
+        assert_eq!(env.get("key").unwrap(), &Expr::string("value"));
     }
 
     #[test]
@@ -56,10 +53,7 @@ mod tests {
         env.define("key", Expr::string("value"));
         env.define("key", Expr::number(1.));
 
-        assert_eq!(
-            env.get("key").unwrap(),
-            &Expr::number(1.)
-        );
+        assert_eq!(env.get("key").unwrap(), &Expr::number(1.));
     }
 
     #[test]
@@ -72,14 +66,8 @@ mod tests {
             let mut extended_env = Environment::extend(&env);
             extended_env.define("a", Expr::string("a_shadow"));
 
-            assert_eq!(
-                extended_env.get("a").unwrap(),
-                &Expr::string("a_shadow")
-            );
-            assert_eq!(
-                extended_env.get("b").unwrap(),
-                &Expr::string("b")
-            );
+            assert_eq!(extended_env.get("a").unwrap(), &Expr::string("a_shadow"));
+            assert_eq!(extended_env.get("b").unwrap(), &Expr::string("b"));
         }
 
         assert_eq!(env.get("a").unwrap(), &Expr::string("a"));
