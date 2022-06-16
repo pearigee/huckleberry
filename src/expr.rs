@@ -5,17 +5,15 @@ use ordered_float::OrderedFloat;
 use crate::environment::Environment;
 
 pub struct NativeCallable {
-    id: String,
-    arity: usize,
-    function: fn(args: Vec<Expr>, env: Environment<Expr>),
-    metadata: BTreeMap<Expr, Expr>,
+    pub id: String,
+    pub arity: usize,
+    pub function: fn(args: &[Expr], env: &Environment<Expr>) -> Expr,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct CodeCallable {
-    args: Vec<Expr>,
-    function: Vec<Expr>,
-    metadata: BTreeMap<Expr, Expr>,
+    pub args: Vec<Expr>,
+    pub function: Vec<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -73,6 +71,28 @@ impl Expr {
         }
         Expr::Map(map)
     }
+
+    pub fn native_callable(
+        name: &str,
+        arity: usize,
+        function: fn(args: &[Expr], env: &Environment<Expr>) -> Expr,
+    ) -> Expr {
+        let mut id = name.to_string();
+        id.push_str("_");
+        id.push_str(&arity.to_string());
+        Expr::NativeCallable(NativeCallable {
+            id,
+            arity,
+            function,
+        })
+    }
+
+    pub fn id(&self) -> String {
+        match self {
+            Expr::Symbol(name) => name.to_string(),
+            _ => format!("{:?}", self),
+        }
+    }
 }
 
 impl PartialEq for NativeCallable {
@@ -109,7 +129,6 @@ impl Clone for NativeCallable {
             id: self.id.to_string(),
             arity: self.arity,
             function: self.function,
-            metadata: self.metadata.clone(),
         }
     }
 }
