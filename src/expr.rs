@@ -2,6 +2,22 @@ use std::collections::BTreeMap;
 
 use ordered_float::OrderedFloat;
 
+use crate::environment::Environment;
+
+pub struct NativeCallable {
+    id: String,
+    arity: usize,
+    function: fn(args: Vec<Expr>, env: Environment<Expr>),
+    metadata: BTreeMap<Expr, Expr>,
+}
+
+#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
+pub struct CodeCallable {
+    args: Vec<Expr>,
+    function: Vec<Expr>,
+    metadata: BTreeMap<Expr, Expr>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Expr {
     List(Vec<Expr>),
@@ -12,6 +28,8 @@ pub enum Expr {
     Symbol(String),
     Vector(Vec<Expr>),
     Map(BTreeMap<Expr, Expr>),
+    NativeCallable(NativeCallable),
+    CodeCallable(CodeCallable),
     Nil,
 }
 
@@ -54,5 +72,44 @@ impl Expr {
             map.insert(pair.0.to_owned(), pair.1.to_owned());
         }
         Expr::Map(map)
+    }
+}
+
+impl PartialEq for NativeCallable {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for NativeCallable {}
+
+impl Ord for NativeCallable {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for NativeCallable {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.id.cmp(&other.id))
+    }
+}
+
+impl std::fmt::Debug for NativeCallable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NativeCallable")
+            .field("id", &self.id)
+            .finish()
+    }
+}
+
+impl Clone for NativeCallable {
+    fn clone(&self) -> Self {
+        NativeCallable {
+            id: self.id.to_string(),
+            arity: self.arity,
+            function: self.function,
+            metadata: self.metadata.clone(),
+        }
     }
 }

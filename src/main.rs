@@ -1,7 +1,7 @@
 mod environment;
 mod error;
-mod parser;
 mod expr;
+mod parser;
 mod scanner;
 
 fn main() {

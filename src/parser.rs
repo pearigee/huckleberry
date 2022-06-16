@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::{
     error::error,
-    scanner::{scan, Token, TokenType}, expr::Expr,
+    expr::Expr,
+    scanner::{scan, Token, TokenType},
 };
 
 struct Parser {
