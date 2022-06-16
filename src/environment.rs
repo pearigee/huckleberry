@@ -2,31 +2,31 @@ use std::collections::BTreeMap;
 
 use crate::expr::Expr;
 
-pub struct Environment<'a> {
-    vars: BTreeMap<String, Expr>,
-    enclosing: Option<&'a Environment<'a>>,
+pub struct Environment<'a, T> {
+    vars: BTreeMap<String, T>,
+    enclosing: Option<&'a Environment<'a, T>>,
 }
 
-impl<'a> Environment<'a> {
-    pub fn new() -> Environment<'a> {
+impl<'a, T> Environment<'a, T> {
+    pub fn new() -> Environment<'a, T> {
         Environment {
             vars: BTreeMap::new(),
             enclosing: None,
         }
     }
 
-    pub fn extend(environment: &'a Environment) -> Environment<'a> {
+    pub fn extend(environment: &'a Environment<T>) -> Environment<'a, T> {
         Environment {
             vars: BTreeMap::new(),
             enclosing: Some(environment),
         }
     }
 
-    pub fn define(&mut self, key: &str, value: Expr) {
+    pub fn define(&mut self, key: &str, value: T) {
         self.vars.insert(key.to_string(), value);
     }
 
-    pub fn get(&self, key: &str) -> Option<&Expr> {
+    pub fn get(&self, key: &str) -> Option<&T> {
         let result = self.vars.get(key);
         if result.is_none() && self.enclosing.is_some() {
             return self.enclosing.unwrap().get(key);
