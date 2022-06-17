@@ -2,12 +2,12 @@ use std::collections::BTreeMap;
 
 use crate::expr::Expr;
 
-pub struct Environment<'a, T> {
+pub struct Environment<'a, T: Clone> {
     vars: BTreeMap<String, T>,
     enclosing: Option<&'a Environment<'a, T>>,
 }
 
-impl<'a, T> Environment<'a, T> {
+impl<'a, T: Clone> Environment<'a, T> {
     pub fn new() -> Environment<'a, T> {
         Environment {
             vars: BTreeMap::new(),
@@ -24,6 +24,10 @@ impl<'a, T> Environment<'a, T> {
 
     pub fn define(&mut self, key: &str, value: T) {
         self.vars.insert(key.to_string(), value);
+    }
+
+    pub fn merge(&mut self, env: &Environment<'a, T>) {
+        self.vars.extend(env.vars.clone())
     }
 
     pub fn get(&self, key: &str) -> Option<&T> {

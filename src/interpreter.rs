@@ -89,31 +89,13 @@ impl Callable for CodeCallable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{modules::math::math_module};
 
     #[test]
     fn test_calls_native_callable() {
         let mut env = Environment::new();
-        env.define(
-            "+",
-            Expr::native_callable("+", 2, |args, env| -> Expr {
-                let resolved: Vec<Expr> = args.iter().map(|expr| {eval_expr(expr, env)}).collect();
-                match resolved[..] {
-                    [Expr::Number(a), Expr::Number(b)] => Expr::number(*a + *b),
-                    _ => error("Cannot call + on non-number types"),
-                }
-            }),
-        );
-        env.define(
-            "*",
-            Expr::native_callable("*", 2, |args, env| -> Expr {
-                let resolved: Vec<Expr> = args.iter().map(|expr| {eval_expr(expr, env)}).collect();
-                match resolved[..] {
-                    [Expr::Number(a), Expr::Number(b)] => Expr::number(*a * *b),
-                    _ => error("Cannot call * on non-number types"),
-                }
-            }),
-        );
+        env.merge(&math_module());
 
-        assert_eq!(eval("(+ 1 (* 3 2))", &env), Expr::number(7.));
+        assert_eq!(eval("(+ 1 (/ (* 3 (- 5 2)) 3))", &env), Expr::number(4.));
     }
 }
