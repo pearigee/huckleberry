@@ -16,9 +16,9 @@ pub fn math_module() -> Environment<'static, Expr> {
     let mut env = Environment::new();
 
     env.define("+", operator!("+", 2, +));
-    env.define("-", operator!("+", 2, -));
-    env.define("*", operator!("+", 2, *));
-    env.define("/", operator!("+", 2, /));
+    env.define("-", operator!("-", 2, -));
+    env.define("*", operator!("*", 2, *));
+    env.define("/", operator!("/", 2, /));
 
     env
 }
