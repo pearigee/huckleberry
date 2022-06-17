@@ -4,14 +4,21 @@ use ordered_float::OrderedFloat;
 
 use crate::environment::Environment;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum Arity {
+    Count(usize),
+    Variadic,
+}
+
 pub struct NativeCallable {
     pub id: String,
-    pub arity: usize,
+    pub arity: Arity,
     pub function: fn(args: &[Expr], env: &Environment<Expr>) -> Expr,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct CodeCallable {
+    pub arity: Arity,
     pub args: Vec<Expr>,
     pub function: Vec<Expr>,
 }
@@ -74,7 +81,7 @@ impl Expr {
 
     pub fn native_callable(
         name: &str,
-        arity: usize,
+        arity: Arity,
         function: fn(args: &[Expr], env: &Environment<Expr>) -> Expr,
     ) -> Expr {
         let mut id = name.to_string();
@@ -127,8 +134,21 @@ impl Clone for NativeCallable {
     fn clone(&self) -> Self {
         NativeCallable {
             id: self.id.to_string(),
-            arity: self.arity,
+            arity: self.arity.to_owned(),
             function: self.function,
         }
+    }
+}
+
+impl std::fmt::Display for Arity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Arity::Variadic => "variadic".to_string(),
+                Arity::Count(value) => value.to_string(),
+            }
+        )
     }
 }

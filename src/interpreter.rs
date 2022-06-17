@@ -1,13 +1,13 @@
 use crate::{
     environment::Environment,
     error::error,
-    expr::{CodeCallable, Expr, NativeCallable},
+    expr::{Arity, CodeCallable, Expr, NativeCallable},
     parser::parse,
 };
 
 trait Callable {
     fn call(&self, args: &[Expr], env: &Environment<Expr>) -> Expr;
-    fn arity(&self) -> usize;
+    fn arity(&self) -> &Arity;
 }
 
 pub fn eval(input: &str, env: &Environment<Expr>) -> Expr {
@@ -33,17 +33,22 @@ pub fn eval_expr(expr: &Expr, env: &Environment<Expr>) -> Expr {
             let function = resolve(f, env);
             match function {
                 Some(Expr::NativeCallable(callable)) => {
-                    if callable.arity() != args.len() {
-                        invalid_arity_error(f);
+                    if let Arity::Count(value) = callable.arity {
+                        if value != args.len() {
+                            invalid_arity_error(f);
+                        }
                     }
                     callable.call(args, env)
                 }
                 Some(Expr::CodeCallable(callable)) => {
-                    if callable.arity() != args.len() {
-                        invalid_arity_error(f);
+                    if let Arity::Count(value) = callable.arity {
+                        if value != args.len() {
+                            invalid_arity_error(f);
+                        }
                     }
+                    // TODO: Support variadic functions
                     let mut arg_env = Environment::extend(env);
-                    for i in 0..callable.arity() {
+                    for i in 0..callable.args.len() {
                         arg_env.define(&callable.args[i].id(), eval_expr(&args[i], env))
                     }
                     callable.call(args, &arg_env)
@@ -67,8 +72,8 @@ fn invalid_arity_error(callable: &Expr) {
 }
 
 impl Callable for NativeCallable {
-    fn arity(&self) -> usize {
-        self.arity
+    fn arity(&self) -> &Arity {
+        &self.arity
     }
 
     fn call(&self, args: &[Expr], env: &Environment<Expr>) -> Expr {
@@ -77,8 +82,8 @@ impl Callable for NativeCallable {
 }
 
 impl Callable for CodeCallable {
-    fn arity(&self) -> usize {
-        self.args.len()
+    fn arity(&self) -> &Arity {
+        &self.arity
     }
 
     fn call(&self, args: &[Expr], env: &Environment<Expr>) -> Expr {
@@ -89,7 +94,7 @@ impl Callable for CodeCallable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{modules::math::math_module};
+    use crate::modules::math::math_module;
 
     #[test]
     fn test_calls_native_callable() {
