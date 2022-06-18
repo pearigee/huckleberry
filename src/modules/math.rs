@@ -21,7 +21,7 @@ macro_rules! operator {
     };
 }
 
-pub fn math_module() -> Environment<'static, Expr> {
+pub fn math_module() -> Environment<'static> {
     let mut env = Environment::new();
 
     env.define("+", operator!("+", +));
@@ -32,18 +32,17 @@ pub fn math_module() -> Environment<'static, Expr> {
     env
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{modules::math::math_module, environment::Environment, interpreter::eval};
+    use crate::{environment::Environment, interpreter::eval, modules::math::math_module};
 
     #[test]
     fn test_add_op() {
         let mut env = Environment::new();
         env.merge(&math_module());
 
-        assert_eq!(eval("(+ 1 2 3 4 5)", &env), Expr::number(15.));
+        assert_eq!(eval("(+ 1 2 3 4 5)", &mut env), Expr::number(15.));
     }
 
     #[test]
@@ -51,7 +50,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(&math_module());
 
-        assert_eq!(eval("(- 1 2 3 4 5)", &env), Expr::number(-13.));
+        assert_eq!(eval("(- 1 2 3 4 5)", &mut env), Expr::number(-13.));
     }
 
     #[test]
@@ -59,7 +58,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(&math_module());
 
-        assert_eq!(eval("(* 1 2 3 4 5)", &env), Expr::number(120.));
+        assert_eq!(eval("(* 1 2 3 4 5)", &mut env), Expr::number(120.));
     }
 
     #[test]
@@ -67,6 +66,6 @@ mod tests {
         let mut env = Environment::new();
         env.merge(&math_module());
 
-        assert_eq!(eval("(/ 20 2 2)", &env), Expr::number(5.));
+        assert_eq!(eval("(/ 20 2 2)", &mut env), Expr::number(5.));
     }
 }

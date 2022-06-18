@@ -1,41 +1,49 @@
 use std::collections::BTreeMap;
 
-use crate::expr::Expr;
+use crate::{expr::Expr, interpreter::eval_expr};
 
-pub struct Environment<'a, T: Clone> {
-    vars: BTreeMap<String, T>,
-    enclosing: Option<&'a Environment<'a, T>>,
+pub struct Environment<'a> {
+    vars: BTreeMap<String, Expr>,
+    enclosing: Option<&'a Environment<'a>>,
 }
 
-impl<'a, T: Clone> Environment<'a, T> {
-    pub fn new() -> Environment<'a, T> {
+impl<'a> Environment<'a> {
+    pub fn new() -> Environment<'a> {
         Environment {
             vars: BTreeMap::new(),
             enclosing: None,
         }
     }
 
-    pub fn extend(environment: &'a Environment<T>) -> Environment<'a, T> {
+    pub fn extend(environment: &'a Environment) -> Environment<'a> {
         Environment {
             vars: BTreeMap::new(),
             enclosing: Some(environment),
         }
     }
 
-    pub fn define(&mut self, key: &str, value: T) {
+    pub fn define(&mut self, key: &str, value: Expr) {
         self.vars.insert(key.to_string(), value);
     }
 
-    pub fn merge(&mut self, env: &Environment<'a, T>) {
+    pub fn eval_define(&mut self, key: &str, value: Expr) {
+        let resolved = { eval_expr(&value, self) };
+        self.vars.insert(key.to_string(), resolved);
+    }
+
+    pub fn merge(&mut self, env: &Environment<'a>) {
         self.vars.extend(env.vars.clone())
     }
 
-    pub fn get(&self, key: &str) -> Option<&T> {
+    pub fn get(&self, key: &str) -> Option<Expr> {
         let result = self.vars.get(key);
         if result.is_none() && self.enclosing.is_some() {
             return self.enclosing.unwrap().get(key);
         }
-        result
+        match result {
+            Some(value) => Some(value.to_owned()),
+            _ => None,
+        }
     }
 }
 
@@ -48,7 +56,7 @@ mod tests {
         let mut env = Environment::new();
         env.define("key", Expr::string("value"));
 
-        assert_eq!(env.get("key").unwrap(), &Expr::string("value"));
+        assert_eq!(env.get("key").unwrap(), Expr::string("value"));
     }
 
     #[test]
@@ -57,7 +65,7 @@ mod tests {
         env.define("key", Expr::string("value"));
         env.define("key", Expr::number(1.));
 
-        assert_eq!(env.get("key").unwrap(), &Expr::number(1.));
+        assert_eq!(env.get("key").unwrap(), Expr::number(1.));
     }
 
     #[test]
@@ -70,10 +78,10 @@ mod tests {
             let mut extended_env = Environment::extend(&env);
             extended_env.define("a", Expr::string("a_shadow"));
 
-            assert_eq!(extended_env.get("a").unwrap(), &Expr::string("a_shadow"));
-            assert_eq!(extended_env.get("b").unwrap(), &Expr::string("b"));
+            assert_eq!(extended_env.get("a").unwrap(), Expr::string("a_shadow"));
+            assert_eq!(extended_env.get("b").unwrap(), Expr::string("b"));
         }
 
-        assert_eq!(env.get("a").unwrap(), &Expr::string("a"));
+        assert_eq!(env.get("a").unwrap(), Expr::string("a"));
     }
 }

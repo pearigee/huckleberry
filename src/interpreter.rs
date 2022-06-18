@@ -6,16 +6,16 @@ use crate::{
 };
 
 trait Callable {
-    fn call(&self, args: &[Expr], env: &Environment<Expr>) -> Expr;
+    fn call(&self, args: &[Expr], env: &mut Environment) -> Expr;
     fn arity(&self) -> &Arity;
 }
 
-pub fn eval(input: &str, env: &Environment<Expr>) -> Expr {
+pub fn eval(input: &str, env: &mut Environment) -> Expr {
     let exprs = parse(input);
     eval_exprs(&exprs, env)
 }
 
-pub fn eval_exprs(exprs: &Vec<Expr>, env: &Environment<Expr>) -> Expr {
+pub fn eval_exprs(exprs: &Vec<Expr>, env: &mut Environment) -> Expr {
     let mut result = Expr::Nil;
     for expr in exprs {
         result = eval_expr(expr, env);
@@ -23,7 +23,7 @@ pub fn eval_exprs(exprs: &Vec<Expr>, env: &Environment<Expr>) -> Expr {
     result
 }
 
-pub fn eval_expr(expr: &Expr, env: &Environment<Expr>) -> Expr {
+pub fn eval_expr(expr: &Expr, env: &mut Environment) -> Expr {
     match expr {
         Expr::List(list) => {
             if list.is_empty() {
@@ -47,20 +47,26 @@ pub fn eval_expr(expr: &Expr, env: &Environment<Expr>) -> Expr {
                         }
                     }
                     // TODO: Support variadic functions
-                    let mut arg_env = Environment::extend(env);
+                    let resolved_args: Vec<Expr> =
+                        args.iter().map(|arg| eval_expr(arg, env)).collect();
+                    let mut arg_env = Environment::extend(&env);
                     for i in 0..callable.args.len() {
-                        arg_env.define(&callable.args[i].id(), eval_expr(&args[i], env))
+                        arg_env.define(&callable.args[i].id(), resolved_args[i].to_owned());
                     }
-                    callable.call(args, &arg_env)
+                    callable.call(args, &mut arg_env)
                 }
                 _ => error(format!("{:?} is not callable", f)),
             }
         }
+        Expr::Symbol(value) => match env.get(value) {
+            Some(expr) => expr.to_owned(),
+            _ => error(format!("{:?} is not bound to anything", value)),
+        },
         _ => expr.to_owned(),
     }
 }
 
-pub fn resolve<'a>(expr: &'a Expr, env: &'a Environment<Expr>) -> Option<&'a Expr> {
+pub fn resolve<'a>(expr: &'a Expr, env: &'a Environment) -> Option<Expr> {
     match expr {
         Expr::Symbol(id) => env.get(id),
         _ => None,
@@ -76,7 +82,7 @@ impl Callable for NativeCallable {
         &self.arity
     }
 
-    fn call(&self, args: &[Expr], env: &Environment<Expr>) -> Expr {
+    fn call(&self, args: &[Expr], env: &mut Environment) -> Expr {
         (self.function)(args, env)
     }
 }
@@ -86,7 +92,7 @@ impl Callable for CodeCallable {
         &self.arity
     }
 
-    fn call(&self, args: &[Expr], env: &Environment<Expr>) -> Expr {
+    fn call(&self, _args: &[Expr], _env: &mut Environment) -> Expr {
         Expr::Nil
     }
 }
@@ -101,6 +107,9 @@ mod tests {
         let mut env = Environment::new();
         env.merge(&math_module());
 
-        assert_eq!(eval("(+ 1 (/ (* 3 (- 5 2)) 3))", &env), Expr::number(4.));
+        assert_eq!(
+            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", &mut env),
+            Expr::number(4.)
+        );
     }
 }

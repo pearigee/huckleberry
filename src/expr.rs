@@ -13,7 +13,7 @@ pub enum Arity {
 pub struct NativeCallable {
     pub id: String,
     pub arity: Arity,
-    pub function: fn(args: &[Expr], env: &Environment<Expr>) -> Expr,
+    pub function: fn(args: &[Expr], env: &mut Environment) -> Expr,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
@@ -82,7 +82,7 @@ impl Expr {
     pub fn native_callable(
         name: &str,
         arity: Arity,
-        function: fn(args: &[Expr], env: &Environment<Expr>) -> Expr,
+        function: fn(args: &[Expr], env: &mut Environment) -> Expr,
     ) -> Expr {
         let mut id = name.to_string();
         id.push_str("_");
