@@ -1,10 +1,10 @@
 use crate::{
     environment::Environment,
     error::error,
-    expr::{Arity, Expr},
+    expr::{Arity, Expr}, interpreter::eval_expr,
 };
 
-pub fn special_forms_module() -> Environment<'static> {
+pub fn special_forms_module() -> Environment {
     let mut env = Environment::new();
 
     env.define(
@@ -14,7 +14,7 @@ pub fn special_forms_module() -> Environment<'static> {
                 error("`def` takes two arguments: (def var value)")
             }
             match &args[0] {
-                Expr::Symbol(value) => env.eval_define(&value, args[1].to_owned()),
+                Expr::Symbol(value) => env.define(&value, eval_expr(&args[1], env.clone_ref())),
                 invalid => error(format!(
                     "`def` can only assign to a symbol, {:?} is not a symbol",
                     invalid
@@ -35,9 +35,9 @@ mod tests {
     #[test]
     fn test_def() {
         let mut env = Environment::new();
-        env.merge(&math_module());
-        env.merge(&special_forms_module());
-        let result = eval("(def a 2) (+ a 1)", &mut env);
+        env.merge(math_module());
+        env.merge(special_forms_module());
+        let result = eval("(def a 2) (+ a 1)", env.as_ref());
 
         assert_eq!(result, Expr::number(3.));
     }
@@ -45,10 +45,11 @@ mod tests {
     #[test]
     fn test_def_overwrite() {
         let mut env = Environment::new();
-        env.merge(&math_module());
-        env.merge(&special_forms_module());
-        eval("(def a 2) (def a (+ a 1))", &mut env);
+        env.merge(math_module());
+        env.merge(special_forms_module());
+        let env_ref = env.as_ref();
+        eval("(def a 2) (def a (+ a 1))", env_ref.clone_ref());
 
-        assert_eq!(env.get("a"), Some(Expr::number(3.)));
+        assert_eq!(env_ref.get("a"), Ok(Expr::number(3.)));
     }
 }

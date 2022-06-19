@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use ordered_float::OrderedFloat;
 
-use crate::environment::Environment;
+use crate::environment::{EnvironmentRef};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Arity {
@@ -13,7 +13,7 @@ pub enum Arity {
 pub struct NativeCallable {
     pub id: String,
     pub arity: Arity,
-    pub function: fn(args: &[Expr], env: &mut Environment) -> Expr,
+    pub function: fn(args: &[Expr], env: EnvironmentRef) -> Expr,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
@@ -82,7 +82,7 @@ impl Expr {
     pub fn native_callable(
         name: &str,
         arity: Arity,
-        function: fn(args: &[Expr], env: &mut Environment) -> Expr,
+        function: fn(args: &[Expr], env: EnvironmentRef) -> Expr,
     ) -> Expr {
         let mut id = name.to_string();
         id.push_str("_");

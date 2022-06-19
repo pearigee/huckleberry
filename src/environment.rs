@@ -1,24 +1,64 @@
-use std::collections::BTreeMap;
+use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use crate::{expr::Expr, interpreter::eval_expr};
+use crate::{error::HError, expr::Expr, interpreter::eval_expr};
 
-pub struct Environment<'a> {
+pub struct EnvironmentRef(Rc<RefCell<Option<Environment>>>);
+
+pub struct Environment {
     vars: BTreeMap<String, Expr>,
-    enclosing: Option<&'a Environment<'a>>,
+    enclosing: EnvironmentRef,
 }
 
-impl<'a> Environment<'a> {
-    pub fn new() -> Environment<'a> {
+fn new_rc_ref_cell<T>(x: T) -> Rc<RefCell<T>> {
+    Rc::new(RefCell::new(x))
+}
+
+impl EnvironmentRef {
+    pub fn nil() -> EnvironmentRef {
+        EnvironmentRef(new_rc_ref_cell(None))
+    }
+
+    pub fn new(env: Environment) -> EnvironmentRef {
+        EnvironmentRef(new_rc_ref_cell(Some(env)))
+    }
+
+    pub fn is_some(&self) -> bool {
+        self.0.borrow().as_ref().is_some()
+    }
+
+    pub fn clone_ref(&self) -> EnvironmentRef {
+        EnvironmentRef(Rc::clone(&self.0))
+    }
+
+    pub fn get(&self, id: &str) -> Result<Expr, HError> {
+        self.0
+            .borrow()
+            .as_ref()
+            .ok_or_else(|| HError::EnvironmentNotFound)?
+            .get(id)
+    }
+
+    pub fn define(&self, key: &str, value: Expr) {
+        self.0
+            .borrow_mut()
+            .as_mut()
+            .expect("Environment not found")
+            .define(key, value);
+    }
+}
+
+impl Environment {
+    pub fn new() -> Environment {
         Environment {
             vars: BTreeMap::new(),
-            enclosing: None,
+            enclosing: EnvironmentRef::nil(),
         }
     }
 
-    pub fn extend(environment: &'a Environment) -> Environment<'a> {
+    pub fn extend(env_ref: EnvironmentRef) -> Environment {
         Environment {
             vars: BTreeMap::new(),
-            enclosing: Some(environment),
+            enclosing: env_ref,
         }
     }
 
@@ -26,24 +66,23 @@ impl<'a> Environment<'a> {
         self.vars.insert(key.to_string(), value);
     }
 
-    pub fn eval_define(&mut self, key: &str, value: Expr) {
-        let resolved = { eval_expr(&value, self) };
-        self.vars.insert(key.to_string(), resolved);
-    }
-
-    pub fn merge(&mut self, env: &Environment<'a>) {
+    pub fn merge(&mut self, env: Environment) {
         self.vars.extend(env.vars.clone())
     }
 
-    pub fn get(&self, key: &str) -> Option<Expr> {
+    pub fn get(&self, key: &str) -> Result<Expr, HError> {
         let result = self.vars.get(key);
         if result.is_none() && self.enclosing.is_some() {
-            return self.enclosing.unwrap().get(key);
+            return self.enclosing.get(key);
         }
         match result {
-            Some(value) => Some(value.to_owned()),
-            _ => None,
+            Some(value) => Ok(value.to_owned()),
+            _ => Err(HError::UnboundVar(key.to_string())),
         }
+    }
+
+    pub fn as_ref(self) -> EnvironmentRef {
+        EnvironmentRef::new(self)
     }
 }
 
@@ -74,14 +113,16 @@ mod tests {
         env.define("a", Expr::string("a"));
         env.define("b", Expr::string("b"));
 
+        let env_ref = env.as_ref();
+
         {
-            let mut extended_env = Environment::extend(&env);
+            let mut extended_env = Environment::extend(env_ref.clone_ref());
             extended_env.define("a", Expr::string("a_shadow"));
 
             assert_eq!(extended_env.get("a").unwrap(), Expr::string("a_shadow"));
             assert_eq!(extended_env.get("b").unwrap(), Expr::string("b"));
         }
 
-        assert_eq!(env.get("a").unwrap(), Expr::string("a"));
+        assert_eq!(env_ref.get("a").unwrap(), Expr::string("a"));
     }
 }

@@ -1,38 +1,38 @@
 use crate::{
-    environment::Environment,
-    error::error,
+    environment::{Environment, EnvironmentRef},
+    error::{error, HError},
     expr::{Arity, CodeCallable, Expr, NativeCallable},
     parser::parse,
 };
 
 trait Callable {
-    fn call(&self, args: &[Expr], env: &mut Environment) -> Expr;
+    fn call(&self, args: &[Expr], env: EnvironmentRef) -> Expr;
     fn arity(&self) -> &Arity;
 }
 
-pub fn eval(input: &str, env: &mut Environment) -> Expr {
+pub fn eval(input: &str, env: EnvironmentRef) -> Expr {
     let exprs = parse(input);
     eval_exprs(&exprs, env)
 }
 
-pub fn eval_exprs(exprs: &Vec<Expr>, env: &mut Environment) -> Expr {
+pub fn eval_exprs(exprs: &Vec<Expr>, env: EnvironmentRef) -> Expr {
     let mut result = Expr::Nil;
     for expr in exprs {
-        result = eval_expr(expr, env);
+        result = eval_expr(expr, env.clone_ref());
     }
     result
 }
 
-pub fn eval_expr(expr: &Expr, env: &mut Environment) -> Expr {
+pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Expr {
     match expr {
         Expr::List(list) => {
             if list.is_empty() {
                 error("Invalid empty list")
             }
             let (f, args) = list.split_first().unwrap();
-            let function = resolve(f, env);
+            let function = resolve(f, env.clone_ref());
             match function {
-                Some(Expr::NativeCallable(callable)) => {
+                Ok(Expr::NativeCallable(callable)) => {
                     if let Arity::Count(value) = callable.arity {
                         if value != args.len() {
                             invalid_arity_error(f);
@@ -40,7 +40,7 @@ pub fn eval_expr(expr: &Expr, env: &mut Environment) -> Expr {
                     }
                     callable.call(args, env)
                 }
-                Some(Expr::CodeCallable(callable)) => {
+                Ok(Expr::CodeCallable(callable)) => {
                     if let Arity::Count(value) = callable.arity {
                         if value != args.len() {
                             invalid_arity_error(f);
@@ -48,28 +48,28 @@ pub fn eval_expr(expr: &Expr, env: &mut Environment) -> Expr {
                     }
                     // TODO: Support variadic functions
                     let resolved_args: Vec<Expr> =
-                        args.iter().map(|arg| eval_expr(arg, env)).collect();
-                    let mut arg_env = Environment::extend(&env);
+                        args.iter().map(|arg| eval_expr(arg, env.clone_ref())).collect();
+                    let mut arg_env = Environment::extend(env.clone_ref());
                     for i in 0..callable.args.len() {
                         arg_env.define(&callable.args[i].id(), resolved_args[i].to_owned());
                     }
-                    callable.call(args, &mut arg_env)
+                    callable.call(args, arg_env.as_ref())
                 }
                 _ => error(format!("{:?} is not callable", f)),
             }
         }
         Expr::Symbol(value) => match env.get(value) {
-            Some(expr) => expr.to_owned(),
+            Ok(expr) => expr.to_owned(),
             _ => error(format!("{:?} is not bound to anything", value)),
         },
         _ => expr.to_owned(),
     }
 }
 
-pub fn resolve<'a>(expr: &'a Expr, env: &'a Environment) -> Option<Expr> {
+pub fn resolve(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
     match expr {
-        Expr::Symbol(id) => env.get(id),
-        _ => None,
+        Expr::Symbol(id) => env.get(&id),
+        _ => Err(HError::UnexpectedForm(expr.to_owned())),
     }
 }
 
@@ -82,7 +82,7 @@ impl Callable for NativeCallable {
         &self.arity
     }
 
-    fn call(&self, args: &[Expr], env: &mut Environment) -> Expr {
+    fn call(&self, args: &[Expr], env: EnvironmentRef) -> Expr {
         (self.function)(args, env)
     }
 }
@@ -92,7 +92,7 @@ impl Callable for CodeCallable {
         &self.arity
     }
 
-    fn call(&self, _args: &[Expr], _env: &mut Environment) -> Expr {
+    fn call(&self, _args: &[Expr], _env: EnvironmentRef) -> Expr {
         Expr::Nil
     }
 }
@@ -105,10 +105,10 @@ mod tests {
     #[test]
     fn test_calls_native_callable() {
         let mut env = Environment::new();
-        env.merge(&math_module());
+        env.merge(math_module());
 
         assert_eq!(
-            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", &mut env),
+            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env.as_ref()),
             Expr::number(4.)
         );
     }

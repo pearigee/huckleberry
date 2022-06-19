@@ -9,7 +9,7 @@ macro_rules! operator {
     ($name:expr, $op:tt) => {
         Expr::native_callable($name, Arity::Variadic, |args, env| -> Expr {
             args.iter()
-            .map(|expr| eval_expr(expr, env))
+            .map(|expr| eval_expr(expr, env.clone_ref()))
             .reduce(|a, b| {
                 if let (Expr::Number(a), Expr::Number(b)) = (a,b) {
                        Expr::number(*a $op *b)
@@ -21,7 +21,7 @@ macro_rules! operator {
     };
 }
 
-pub fn math_module() -> Environment<'static> {
+pub fn math_module() -> Environment {
     let mut env = Environment::new();
 
     env.define("+", operator!("+", +));
@@ -40,32 +40,32 @@ mod tests {
     #[test]
     fn test_add_op() {
         let mut env = Environment::new();
-        env.merge(&math_module());
+        env.merge(math_module());
 
-        assert_eq!(eval("(+ 1 2 3 4 5)", &mut env), Expr::number(15.));
+        assert_eq!(eval("(+ 1 2 3 4 5)", env.as_ref()), Expr::number(15.));
     }
 
     #[test]
     fn test_sub_op() {
         let mut env = Environment::new();
-        env.merge(&math_module());
+        env.merge(math_module());
 
-        assert_eq!(eval("(- 1 2 3 4 5)", &mut env), Expr::number(-13.));
+        assert_eq!(eval("(- 1 2 3 4 5)", env.as_ref()), Expr::number(-13.));
     }
 
     #[test]
     fn test_mul_op() {
         let mut env = Environment::new();
-        env.merge(&math_module());
+        env.merge(math_module());
 
-        assert_eq!(eval("(* 1 2 3 4 5)", &mut env), Expr::number(120.));
+        assert_eq!(eval("(* 1 2 3 4 5)", env.as_ref()), Expr::number(120.));
     }
 
     #[test]
     fn test_div_op() {
         let mut env = Environment::new();
-        env.merge(&math_module());
+        env.merge(math_module());
 
-        assert_eq!(eval("(/ 20 2 2)", &mut env), Expr::number(5.));
+        assert_eq!(eval("(/ 20 2 2)", env.as_ref()), Expr::number(5.));
     }
 }
