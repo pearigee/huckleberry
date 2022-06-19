@@ -33,11 +33,7 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
             let function = resolve(f, env.clone_ref());
             match function {
                 Ok(Expr::NativeCallable(callable)) => {
-                    if let Arity::Count(value) = callable.arity {
-                        if value != args.len() {
-                            invalid_arity_error(f);
-                        }
-                    }
+                    check_arity(args, &callable.arity())?;
                     callable.call(args, env)
                 }
                 Ok(Expr::CodeCallable(callable)) => {
@@ -83,10 +79,6 @@ fn check_arity(args: &[Expr], arity: &Arity) -> Result<(), HError> {
     } else {
         Err(HError::InvalidArity(arity.clone()))
     }
-}
-
-fn invalid_arity_error(callable: &Expr) {
-    error(format!("Invalid arity for {:?}", callable));
 }
 
 impl Callable for NativeCallable {
