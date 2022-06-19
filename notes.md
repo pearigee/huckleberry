@@ -1,7 +1,8 @@
 # Objectives
 * Language
     * Support lambdas
-    * Refactor error handling to use Result
+    * Unit test error handling
+    * Unit test set!
     * Implement From for Expr rather than creating special intializers.
 * CLI
     * Convert project to lib with embeded `bin/`
