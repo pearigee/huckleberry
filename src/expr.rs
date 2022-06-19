@@ -2,18 +2,19 @@ use std::collections::BTreeMap;
 
 use ordered_float::OrderedFloat;
 
-use crate::environment::{EnvironmentRef};
+use crate::{environment::EnvironmentRef, error::HError};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Arity {
     Count(usize),
+    AtLeast(usize),
     Variadic,
 }
 
 pub struct NativeCallable {
     pub id: String,
     pub arity: Arity,
-    pub function: fn(args: &[Expr], env: EnvironmentRef) -> Expr,
+    pub function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
@@ -82,7 +83,7 @@ impl Expr {
     pub fn native_callable(
         name: &str,
         arity: Arity,
-        function: fn(args: &[Expr], env: EnvironmentRef) -> Expr,
+        function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
     ) -> Expr {
         let mut id = name.to_string();
         id.push_str("_");
@@ -147,6 +148,7 @@ impl std::fmt::Display for Arity {
             "{}",
             match self {
                 Arity::Variadic => "variadic".to_string(),
+                Arity::AtLeast(value) => format!("at least {}", value),
                 Arity::Count(value) => value.to_string(),
             }
         )

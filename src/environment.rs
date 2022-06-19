@@ -1,6 +1,9 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use crate::{error::{HError, error}, expr::Expr};
+use crate::{
+    error::{error, HError},
+    expr::Expr,
+};
 
 pub struct EnvironmentRef(Rc<RefCell<Option<Environment>>>);
 
@@ -39,7 +42,8 @@ impl EnvironmentRef {
     }
 
     pub fn set(&self, key: &str, value: Expr) -> Result<Expr, HError> {
-        self.0.borrow_mut()
+        self.0
+            .borrow_mut()
             .as_mut()
             .ok_or_else(|| HError::EnvironmentNotFound)?
             .set(key, value)
@@ -90,7 +94,8 @@ impl Environment {
 
     pub fn set(&mut self, key: &str, value: Expr) -> Result<Expr, HError> {
         if self.vars.contains_key(key) {
-            self.vars.insert(key.to_string(), value)
+            self.vars
+                .insert(key.to_string(), value)
                 .ok_or_else(|| HError::UnboundVar(key.to_string()))
         } else if self.enclosing.is_some() {
             self.enclosing.set(key, value)
@@ -133,7 +138,7 @@ mod tests {
         let env_ref = env.as_ref();
 
         let mut nested_env = Environment::extend(env_ref.clone_ref());
-        nested_env.set("key", Expr::number(1.));
+        nested_env.set("key", Expr::number(1.)).unwrap();
 
         assert_eq!(env_ref.get("key").unwrap(), Expr::number(1.));
     }

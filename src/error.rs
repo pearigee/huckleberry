@@ -1,12 +1,14 @@
-use crate::expr::Expr;
+use crate::expr::{Arity, Expr};
 
 pub fn error<S: Into<String>>(message: S) -> ! {
     panic!("{}", message.into());
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum HError {
     UnboundVar(String),
     UnexpectedForm(Expr),
+    InvalidArity(Arity),
+    InvalidType(String, Expr), // Fn being called, violating Expr
     EnvironmentNotFound,
 }

@@ -1,21 +1,24 @@
 use crate::{
-    environment::Environment,
-    error::error,
+    environment::{Environment, EnvironmentRef},
+    error::HError,
     expr::{Arity, Expr},
     interpreter::eval_expr,
 };
 
+fn check_num(expr: Expr, fun_name: &str) -> Result<f64, HError> {
+    match expr {
+        Expr::Number(val) => Ok(*val),
+        _ => Err(HError::InvalidType(fun_name.to_string(), expr)),
+    }
+}
+
 macro_rules! operator {
     ($name:expr, $op:tt) => {
-        Expr::native_callable($name, Arity::Variadic, |args, env| -> Expr {
+        Expr::native_callable($name, Arity::Variadic, |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
             args.iter()
             .map(|expr| eval_expr(expr, env.clone_ref()))
             .reduce(|a, b| {
-                if let (Expr::Number(a), Expr::Number(b)) = (a,b) {
-                       Expr::number(*a $op *b)
-                   } else {
-                       error(format!("{} can only be applied to numbers.", $name))
-                   }
+                Ok(Expr::number(check_num(a?, $name)? $op check_num(b?, $name)?))
             }).unwrap()
         })
     };
@@ -42,7 +45,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(+ 1 2 3 4 5)", env.as_ref()), Expr::number(15.));
+        assert_eq!(eval("(+ 1 2 3 4 5)", env.as_ref()), Ok(Expr::number(15.)));
     }
 
     #[test]
@@ -50,7 +53,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(- 1 2 3 4 5)", env.as_ref()), Expr::number(-13.));
+        assert_eq!(eval("(- 1 2 3 4 5)", env.as_ref()), Ok(Expr::number(-13.)));
     }
 
     #[test]
@@ -58,7 +61,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(* 1 2 3 4 5)", env.as_ref()), Expr::number(120.));
+        assert_eq!(eval("(* 1 2 3 4 5)", env.as_ref()), Ok(Expr::number(120.)));
     }
 
     #[test]
@@ -66,6 +69,6 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(/ 20 2 2)", env.as_ref()), Expr::number(5.));
+        assert_eq!(eval("(/ 20 2 2)", env.as_ref()), Ok(Expr::number(5.)));
     }
 }

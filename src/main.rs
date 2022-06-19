@@ -1,4 +1,8 @@
-use crate::{environment::Environment, modules::{special_forms::special_forms_module, math::math_module}, interpreter::eval};
+use crate::{
+    environment::Environment,
+    interpreter::eval,
+    modules::{math::math_module, special_forms::special_forms_module},
+};
 
 mod environment;
 mod error;
