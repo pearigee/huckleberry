@@ -1,7 +1,8 @@
 # Objectives
 * Language
-    * Support variadic native functions
-    * Support merging environments (or importing?) for loading common native modules
+    * Support lambdas
+    * Refactor error handling to use Result
+    * Implement From for Expr rather than creating special intializers.
 * CLI
     * Convert project to lib with embeded `bin/`
     * Create REPl interface for testing
