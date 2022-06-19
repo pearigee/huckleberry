@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use crate::{error::HError, expr::Expr, interpreter::eval_expr};
+use crate::{error::{HError, error}, expr::Expr};
 
 pub struct EnvironmentRef(Rc<RefCell<Option<Environment>>>);
 
@@ -36,6 +36,13 @@ impl EnvironmentRef {
             .as_ref()
             .ok_or_else(|| HError::EnvironmentNotFound)?
             .get(id)
+    }
+
+    pub fn set(&self, key: &str, value: Expr) -> Result<Expr, HError> {
+        self.0.borrow_mut()
+            .as_mut()
+            .ok_or_else(|| HError::EnvironmentNotFound)?
+            .set(key, value)
     }
 
     pub fn define(&self, key: &str, value: Expr) {
@@ -81,6 +88,17 @@ impl Environment {
         }
     }
 
+    pub fn set(&mut self, key: &str, value: Expr) -> Result<Expr, HError> {
+        if self.vars.contains_key(key) {
+            self.vars.insert(key.to_string(), value)
+                .ok_or_else(|| HError::UnboundVar(key.to_string()))
+        } else if self.enclosing.is_some() {
+            self.enclosing.set(key, value)
+        } else {
+            error("Trying to set an unbound var")
+        }
+    }
+
     pub fn as_ref(self) -> EnvironmentRef {
         EnvironmentRef::new(self)
     }
@@ -105,6 +123,19 @@ mod tests {
         env.define("key", Expr::number(1.));
 
         assert_eq!(env.get("key").unwrap(), Expr::number(1.));
+    }
+
+    #[test]
+    fn test_can_set_vars() {
+        let mut env = Environment::new();
+        env.define("key", Expr::string("value"));
+
+        let env_ref = env.as_ref();
+
+        let mut nested_env = Environment::extend(env_ref.clone_ref());
+        nested_env.set("key", Expr::number(1.));
+
+        assert_eq!(env_ref.get("key").unwrap(), Expr::number(1.));
     }
 
     #[test]
