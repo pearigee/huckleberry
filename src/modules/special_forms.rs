@@ -1,6 +1,6 @@
 use crate::{
     environment::{Environment, EnvironmentRef},
-    error::{HError},
+    error::HError,
     expr::{Arity, Expr},
     interpreter::eval_expr,
 };
@@ -12,7 +12,7 @@ pub fn special_forms_module() -> Environment {
         "def",
         Expr::native_callable(
             "def",
-            Arity::AtLeast(1),
+            Arity::Range(1, 2),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
                 match &args[0] {
                     Expr::Symbol(value) => {

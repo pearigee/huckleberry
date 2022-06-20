@@ -33,11 +33,11 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
             let function = resolve(f, env.clone_ref());
             match function {
                 Ok(Expr::NativeCallable(callable)) => {
-                    check_arity(args, &callable.arity())?;
+                    callable.arity.check(&callable.id, args)?;
                     callable.call(args, env)
                 }
                 Ok(Expr::CodeCallable(callable)) => {
-                    check_arity(args, &callable.arity())?;
+                    callable.arity.check(&callable.id, args)?;
                     // TODO: Support variadic functions
                     let resolved_args: Vec<Result<Expr, HError>> = args
                         .iter()
@@ -67,20 +67,6 @@ pub fn resolve(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
     }
 }
 
-fn check_arity(args: &[Expr], arity: &Arity) -> Result<(), HError> {
-    let matches = match arity {
-        Arity::Count(num) => args.len() == *num,
-        Arity::AtLeast(num) => args.len() >= *num,
-        Arity::Variadic => true,
-    };
-
-    if matches {
-        Ok(())
-    } else {
-        Err(HError::InvalidArity(arity.clone()))
-    }
-}
-
 impl Callable for NativeCallable {
     fn arity(&self) -> &Arity {
         &self.arity
@@ -104,7 +90,7 @@ impl Callable for CodeCallable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::modules::math::math_module;
+    use crate::modules::{math::math_module, special_forms::special_forms_module};
 
     #[test]
     fn test_calls_native_callable() {
@@ -114,6 +100,23 @@ mod tests {
         assert_eq!(
             eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env.as_ref()).unwrap(),
             Expr::number(4.)
+        );
+    }
+
+    #[test]
+    fn test_checks_arity() {
+        let mut env = Environment::new();
+        env.merge(special_forms_module());
+
+        let env_ref = env.as_ref();
+        assert_eq!(
+            eval("(def a 3 4)", env_ref.clone_ref()),
+            Err(HError::InvalidArity("def".to_string(), Arity::Range(1,2)))
+        );
+
+        assert_eq!(
+            eval("(set! a)", env_ref.clone_ref()),
+            Err(HError::InvalidArity("set!".to_string(), Arity::Count(2)))
         );
     }
 }

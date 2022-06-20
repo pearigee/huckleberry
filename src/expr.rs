@@ -7,7 +7,7 @@ use crate::{environment::EnvironmentRef, error::HError};
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Arity {
     Count(usize),
-    AtLeast(usize),
+    Range(usize, usize),
     Variadic,
 }
 
@@ -19,6 +19,7 @@ pub struct NativeCallable {
 
 #[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct CodeCallable {
+    pub id: String,
     pub arity: Arity,
     pub args: Vec<Expr>,
     pub function: Vec<Expr>,
@@ -85,11 +86,8 @@ impl Expr {
         arity: Arity,
         function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
     ) -> Expr {
-        let mut id = name.to_string();
-        id.push_str("_");
-        id.push_str(&arity.to_string());
         Expr::NativeCallable(NativeCallable {
-            id,
+            id: name.to_string(),
             arity,
             function,
         })
@@ -99,6 +97,22 @@ impl Expr {
         match self {
             Expr::Symbol(name) => name.to_string(),
             _ => format!("{:?}", self),
+        }
+    }
+}
+
+impl Arity {
+    pub fn check(&self, name: &str, args: &[Expr]) -> Result<(), HError> {
+        let matches = match self {
+            Arity::Count(num) => args.len() == *num,
+            Arity::Range(min, max) => *min <= args.len() && args.len() <= *max,
+            Arity::Variadic => true,
+        };
+
+        if matches {
+            Ok(())
+        } else {
+            Err(HError::InvalidArity(name.to_string(), self.clone()))
         }
     }
 }
@@ -138,19 +152,5 @@ impl Clone for NativeCallable {
             arity: self.arity.to_owned(),
             function: self.function,
         }
-    }
-}
-
-impl std::fmt::Display for Arity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Arity::Variadic => "variadic".to_string(),
-                Arity::AtLeast(value) => format!("at least {}", value),
-                Arity::Count(value) => value.to_string(),
-            }
-        )
     }
 }
