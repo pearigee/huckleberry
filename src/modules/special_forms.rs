@@ -52,7 +52,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
         env.merge(special_forms_module());
-        let result = eval("(def a 2) (+ a 1)", env.as_ref());
+        let result = eval("(def a 2) (+ a 1)", env.into_ref());
 
         assert_eq!(result, Ok(Expr::number(3.)));
     }
@@ -62,7 +62,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
         env.merge(special_forms_module());
-        let env_ref = env.as_ref();
+        let env_ref = env.into_ref();
         eval("(def a 2) (def a (+ a 1))", env_ref.clone_ref()).unwrap();
 
         assert_eq!(env_ref.get("a"), Ok(Expr::number(3.)));

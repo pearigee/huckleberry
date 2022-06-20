@@ -104,7 +104,7 @@ impl Environment {
         }
     }
 
-    pub fn as_ref(self) -> EnvironmentRef {
+    pub fn into_ref(self) -> EnvironmentRef {
         EnvironmentRef::new(self)
     }
 }
@@ -135,7 +135,7 @@ mod tests {
         let mut env = Environment::new();
         env.define("key", Expr::string("value"));
 
-        let env_ref = env.as_ref();
+        let env_ref = env.into_ref();
 
         let mut nested_env = Environment::extend(env_ref.clone_ref());
         nested_env.set("key", Expr::number(1.)).unwrap();
@@ -149,7 +149,7 @@ mod tests {
         env.define("a", Expr::string("a"));
         env.define("b", Expr::string("b"));
 
-        let env_ref = env.as_ref();
+        let env_ref = env.into_ref();
 
         {
             let mut extended_env = Environment::extend(env_ref.clone_ref());

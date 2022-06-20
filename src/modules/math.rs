@@ -45,7 +45,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(+ 1 2 3 4 5)", env.as_ref()), Ok(Expr::number(15.)));
+        assert_eq!(eval("(+ 1 2 3 4 5)", env.into_ref()), Ok(Expr::number(15.)));
     }
 
     #[test]
@@ -53,7 +53,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(- 1 2 3 4 5)", env.as_ref()), Ok(Expr::number(-13.)));
+        assert_eq!(eval("(- 1 2 3 4 5)", env.into_ref()), Ok(Expr::number(-13.)));
     }
 
     #[test]
@@ -61,7 +61,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(* 1 2 3 4 5)", env.as_ref()), Ok(Expr::number(120.)));
+        assert_eq!(eval("(* 1 2 3 4 5)", env.into_ref()), Ok(Expr::number(120.)));
     }
 
     #[test]
@@ -69,6 +69,6 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(/ 20 2 2)", env.as_ref()), Ok(Expr::number(5.)));
+        assert_eq!(eval("(/ 20 2 2)", env.into_ref()), Ok(Expr::number(5.)));
     }
 }

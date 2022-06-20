@@ -47,7 +47,7 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
                     for i in 0..callable.args.len() {
                         arg_env.define(&callable.args[i].id(), resolved_args[i].clone()?);
                     }
-                    callable.call(args, arg_env.as_ref())
+                    callable.call(args, arg_env.into_ref())
                 }
                 _ => error(format!("{:?} is not callable", f)),
             }
@@ -98,7 +98,7 @@ mod tests {
         env.merge(core_module());
 
         assert_eq!(
-            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env.as_ref()).unwrap(),
+            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env.into_ref()).unwrap(),
             Expr::number(4.)
         );
     }
@@ -108,7 +108,7 @@ mod tests {
         let mut env = Environment::new();
         env.merge(core_module());
 
-        let env_ref = env.as_ref();
+        let env_ref = env.into_ref();
         assert_eq!(
             eval("(def a 3 4)", env_ref.clone_ref()),
             Err(HError::InvalidArity("def".to_string(), Arity::Range(1,2)))
