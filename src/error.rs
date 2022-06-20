@@ -8,6 +8,7 @@ pub fn error<S: Into<String>>(message: S) -> ! {
 pub enum HError {
     UnboundVar(String),
     UnexpectedForm(Expr),
+    SetUndefinedVar(String),
     InvalidArity(String, Arity),
     InvalidType(String, Expr), // Fn being called, violating Expr
     EnvironmentNotFound,

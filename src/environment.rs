@@ -100,7 +100,7 @@ impl Environment {
         } else if self.enclosing.is_some() {
             self.enclosing.set(key, value)
         } else {
-            error("Trying to set an unbound var")
+            Err(HError::SetUndefinedVar(key.to_string()))
         }
     }
 
