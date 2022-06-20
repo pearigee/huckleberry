@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use crate::{
-    error::{error, HError},
+    error::HError,
     expr::Expr,
 };
 
