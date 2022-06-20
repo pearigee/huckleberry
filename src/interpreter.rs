@@ -90,12 +90,12 @@ impl Callable for CodeCallable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::modules::{math::math_module, special_forms::special_forms_module};
+    use crate::modules::{core_module};
 
     #[test]
     fn test_calls_native_callable() {
         let mut env = Environment::new();
-        env.merge(math_module());
+        env.merge(core_module());
 
         assert_eq!(
             eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env.as_ref()).unwrap(),
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn test_checks_arity() {
         let mut env = Environment::new();
-        env.merge(special_forms_module());
+        env.merge(core_module());
 
         let env_ref = env.as_ref();
         assert_eq!(
