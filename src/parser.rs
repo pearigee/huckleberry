@@ -22,7 +22,7 @@ impl Parser {
         Parser {
             tokens: tokens.to_owned(),
             current: 0,
-            debug: true,
+            debug: false,
         }
     }
 

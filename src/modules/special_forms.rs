@@ -92,6 +92,6 @@ mod tests {
 
         let result = eval("(set! a 1)", env_ref.clone_ref());
 
-        assert_eq!(result, Err(HError::SetUndefinedVar("a".to_string())));
+        assert_eq!(result, Err(HError::SetUninitializedVar("a".to_string())));
     }
 }

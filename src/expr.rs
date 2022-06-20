@@ -117,6 +117,17 @@ impl Arity {
     }
 }
 
+impl std::fmt::Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expr::Number(OrderedFloat(value)) => write!(f, "{}", value),
+            Expr::Symbol(value) => write!(f, "{}", value),
+            Expr::Keyword(value) => write!(f, "{}", value),
+            val => write!(f, "{:?}", val)
+        }
+    }
+}
+
 impl PartialEq for NativeCallable {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id

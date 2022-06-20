@@ -100,7 +100,7 @@ impl Environment {
         } else if self.enclosing.is_some() {
             self.enclosing.set(key, value)
         } else {
-            Err(HError::SetUndefinedVar(key.to_string()))
+            Err(HError::SetUninitializedVar(key.to_string()))
         }
     }
 

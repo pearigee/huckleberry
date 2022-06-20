@@ -30,13 +30,13 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
                 error("Invalid empty list")
             }
             let (f, args) = list.split_first().unwrap();
-            let function = resolve(f, env.clone_ref());
+            let function = resolve(f, env.clone_ref())?;
             match function {
-                Ok(Expr::NativeCallable(callable)) => {
+                Expr::NativeCallable(callable) => {
                     callable.arity.check(&callable.id, args)?;
                     callable.call(args, env)
                 }
-                Ok(Expr::CodeCallable(callable)) => {
+                Expr::CodeCallable(callable) => {
                     callable.arity.check(&callable.id, args)?;
                     // TODO: Support variadic functions
                     let resolved_args: Vec<Result<Expr, HError>> = args
@@ -49,12 +49,12 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
                     }
                     callable.call(args, arg_env.into_ref())
                 }
-                _ => error(format!("{:?} is not callable", f)),
+                value => Err(HError::NotAFunction(format!("{}", value))),
             }
         }
         Expr::Symbol(value) => match env.get(value) {
             Ok(expr) => Ok(expr.to_owned()),
-            _ => error(format!("{:?} is not bound to anything", value)),
+            _ => Err(HError::UnboundVar(value.to_string())),
         },
         _ => Ok(expr.to_owned()),
     }
