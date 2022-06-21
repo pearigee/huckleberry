@@ -47,7 +47,10 @@ mod tests {
         env.merge(math_module());
         let env_ref = env.into_ref();
 
-        assert_eq!(eval("(+ 1 2 3 4 5)", env_ref.clone_ref()), Ok(Expr::number(15.)));
+        assert_eq!(
+            eval("(+ 1 2 3 4 5)", env_ref.clone_ref()),
+            Ok(Expr::number(15.))
+        );
         // Test that a single argument is parsed correctly.
         assert_eq!(eval("(+ 1)", env_ref), Ok(Expr::number(1.)));
     }
@@ -57,7 +60,10 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(- 1 2 3 4 5)", env.into_ref()), Ok(Expr::number(-13.)));
+        assert_eq!(
+            eval("(- 1 2 3 4 5)", env.into_ref()),
+            Ok(Expr::number(-13.))
+        );
     }
 
     #[test]
@@ -65,7 +71,10 @@ mod tests {
         let mut env = Environment::new();
         env.merge(math_module());
 
-        assert_eq!(eval("(* 1 2 3 4 5)", env.into_ref()), Ok(Expr::number(120.)));
+        assert_eq!(
+            eval("(* 1 2 3 4 5)", env.into_ref()),
+            Ok(Expr::number(120.))
+        );
     }
 
     #[test]

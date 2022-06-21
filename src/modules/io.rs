@@ -2,7 +2,7 @@ use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
     expr::{Arity, Expr},
-    interpreter::{resolve_args},
+    interpreter::resolve_args,
 };
 
 fn print_resolved_exprs(exprs: &[Expr], env: EnvironmentRef) -> Result<Expr, HError> {
@@ -19,7 +19,7 @@ pub fn io_module() -> Environment {
         "print",
         Expr::native_callable(
             "print",
-            Arity::Range(0,usize::MAX),
+            Arity::Range(0, usize::MAX),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
                 print_resolved_exprs(args, env)?;
                 Ok(Expr::Nil)
@@ -31,7 +31,7 @@ pub fn io_module() -> Environment {
         "println",
         Expr::native_callable(
             "println",
-            Arity::Range(0,usize::MAX),
+            Arity::Range(0, usize::MAX),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
                 print_resolved_exprs(args, env)?;
                 println!();
@@ -42,4 +42,3 @@ pub fn io_module() -> Environment {
 
     env
 }
-

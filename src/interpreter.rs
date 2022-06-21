@@ -32,12 +32,8 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
             let (f, args) = list.split_first().unwrap();
             let function = resolve(f, env.clone_ref())?;
             match function {
-                Expr::NativeCallable(callable) => {
-                    callable.call(args, env)
-                }
-                Expr::CodeCallable(callable) => {
-                    callable.call(args, env)
-                }
+                Expr::NativeCallable(callable) => callable.call(args, env),
+                Expr::CodeCallable(callable) => callable.call(args, env),
                 value => Err(HError::NotAFunction(format!("{}", value))),
             }
         }
@@ -113,10 +109,7 @@ mod tests {
 
         eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
-        assert_eq!(
-            eval("(f 1 2)", env.clone_ref()),
-            Ok(Expr::number(3.))
-        );
+        assert_eq!(eval("(f 1 2)", env.clone_ref()), Ok(Expr::number(3.)));
     }
 
     #[test]
@@ -125,7 +118,7 @@ mod tests {
 
         assert_eq!(
             eval("(def a 3 4)", env.clone_ref()),
-            Err(HError::InvalidArity("def".to_string(), Arity::Range(1,2)))
+            Err(HError::InvalidArity("def".to_string(), Arity::Range(1, 2)))
         );
 
         assert_eq!(

@@ -121,7 +121,7 @@ impl std::fmt::Display for Expr {
             Expr::Number(OrderedFloat(value)) => write!(f, "{}", value),
             Expr::Symbol(value) => write!(f, "{}", value),
             Expr::Keyword(value) => write!(f, "{}", value),
-            val => write!(f, "{:?}", val)
+            val => write!(f, "{:?}", val),
         }
     }
 }
@@ -186,9 +186,7 @@ impl PartialOrd for CodeCallable {
 
 impl std::fmt::Debug for CodeCallable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Fn")
-            .field("id", &self.id)
-            .finish()
+        f.debug_struct("Fn").field("id", &self.id).finish()
     }
 }
 
@@ -203,4 +201,3 @@ impl Clone for CodeCallable {
         }
     }
 }
-

@@ -1,9 +1,6 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use crate::{
-    error::HError,
-    expr::Expr, modules::core_module,
-};
+use crate::{error::HError, expr::Expr, modules::core_module};
 
 pub struct EnvironmentRef(Rc<RefCell<Option<Environment>>>);
 

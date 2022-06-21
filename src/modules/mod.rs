@@ -1,10 +1,10 @@
 use crate::environment::Environment;
 
-use self::{math::math_module, special_forms::special_forms_module, io::io_module};
+use self::{io::io_module, math::math_module, special_forms::special_forms_module};
 
+pub mod io;
 pub mod math;
 pub mod special_forms;
-pub mod io;
 pub mod utils;
 
 pub fn core_module() -> Environment {

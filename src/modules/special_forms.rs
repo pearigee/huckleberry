@@ -1,7 +1,7 @@
 use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
-    expr::{Arity, Expr, CodeCallable},
+    expr::{Arity, CodeCallable, Expr},
     interpreter::eval_expr,
 };
 
@@ -35,7 +35,7 @@ pub fn special_forms_module() -> Environment {
                     Expr::Symbol(value) => {
                         env.set(&value, eval_expr(&args[1], env.clone_ref())?)?;
                         Ok(Expr::Nil)
-                    },
+                    }
                     invalid => Err(HError::UnexpectedForm(invalid.clone())),
                 }
             },
@@ -50,13 +50,13 @@ pub fn special_forms_module() -> Environment {
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
                 let fn_args = match &args[0] {
                     Expr::Vector(values) => values,
-                    value => return Err(HError::UnexpectedForm(value.clone()))
+                    value => return Err(HError::UnexpectedForm(value.clone())),
                 };
                 let mut code: &[Expr] = &[Expr::Nil];
                 if args.len() > 1 {
                     code = &args[1..];
                 }
-                
+
                 Ok(Expr::CodeCallable(CodeCallable {
                     id: format!("{:?}_{:?}", fn_args, code),
                     arity: Arity::Count(fn_args.len()),
@@ -64,8 +64,8 @@ pub fn special_forms_module() -> Environment {
                     function: code.into(),
                     closure: env.clone_ref(),
                 }))
-            }
-        )
+            },
+        ),
     );
 
     env
@@ -118,10 +118,7 @@ mod tests {
 
         eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
-        assert_eq!(
-            eval("(f 1 2)", env.clone_ref()),
-            Ok(Expr::number(3.))
-        );
+        assert_eq!(eval("(f 1 2)", env.clone_ref()), Ok(Expr::number(3.)));
     }
 
     #[test]
@@ -130,9 +127,6 @@ mod tests {
 
         eval("(def f (fn []))", env.clone_ref()).unwrap();
 
-        assert_eq!(
-            eval("(f)", env.clone_ref()),
-            Ok(Expr::Nil)
-        );
+        assert_eq!(eval("(f)", env.clone_ref()), Ok(Expr::Nil));
     }
 }
