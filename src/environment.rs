@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use crate::{
     error::HError,
-    expr::Expr,
+    expr::Expr, modules::core_module,
 };
 
 pub struct EnvironmentRef(Rc<RefCell<Option<Environment>>>);
@@ -64,6 +64,12 @@ impl Environment {
             vars: BTreeMap::new(),
             enclosing: EnvironmentRef::nil(),
         }
+    }
+
+    pub fn with_core_module() -> Environment {
+        let mut env = Environment::new();
+        env.merge(core_module());
+        env
     }
 
     pub fn extend(env_ref: EnvironmentRef) -> Environment {

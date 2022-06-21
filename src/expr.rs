@@ -17,12 +17,12 @@ pub struct NativeCallable {
     pub function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
 }
 
-#[derive(Debug, PartialEq, Clone, Eq, PartialOrd, Ord)]
 pub struct CodeCallable {
     pub id: String,
     pub arity: Arity,
     pub args: Vec<Expr>,
     pub function: Vec<Expr>,
+    pub closure: EnvironmentRef,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -165,3 +165,44 @@ impl Clone for NativeCallable {
         }
     }
 }
+
+impl PartialEq for CodeCallable {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for CodeCallable {}
+
+impl Ord for CodeCallable {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for CodeCallable {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.id.cmp(&other.id))
+    }
+}
+
+impl std::fmt::Debug for CodeCallable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Fn")
+            .field("id", &self.id)
+            .finish()
+    }
+}
+
+impl Clone for CodeCallable {
+    fn clone(&self) -> Self {
+        CodeCallable {
+            id: self.id.to_string(),
+            args: self.args.clone(),
+            arity: self.arity.to_owned(),
+            closure: self.closure.clone_ref(),
+            function: self.function.clone(),
+        }
+    }
+}
+

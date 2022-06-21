@@ -33,21 +33,10 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
             let function = resolve(f, env.clone_ref())?;
             match function {
                 Expr::NativeCallable(callable) => {
-                    callable.arity.check(&callable.id, args)?;
                     callable.call(args, env)
                 }
                 Expr::CodeCallable(callable) => {
-                    callable.arity.check(&callable.id, args)?;
-                    // TODO: Support variadic functions
-                    let resolved_args: Vec<Result<Expr, HError>> = args
-                        .iter()
-                        .map(|arg| eval_expr(arg, env.clone_ref()))
-                        .collect();
-                    let mut arg_env = Environment::extend(env.clone_ref());
-                    for i in 0..callable.args.len() {
-                        arg_env.define(&callable.args[i].id(), resolved_args[i].clone()?);
-                    }
-                    callable.call(args, arg_env.into_ref())
+                    callable.call(args, env)
                 }
                 value => Err(HError::NotAFunction(format!("{}", value))),
             }
@@ -67,12 +56,21 @@ pub fn resolve(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
     }
 }
 
+pub fn resolve_args(args: &[Expr], env: EnvironmentRef) -> Result<Vec<Expr>, HError> {
+    let mut result = Vec::new();
+    for expr in args.iter() {
+        result.push(eval_expr(expr, env.clone_ref())?);
+    }
+    Ok(result)
+}
+
 impl Callable for NativeCallable {
     fn arity(&self) -> &Arity {
         &self.arity
     }
 
     fn call(&self, args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError> {
+        self.arity.check(&self.id, args)?;
         (self.function)(args, env)
     }
 }
@@ -82,40 +80,56 @@ impl Callable for CodeCallable {
         &self.arity
     }
 
-    fn call(&self, _args: &[Expr], _env: EnvironmentRef) -> Result<Expr, HError> {
-        Ok(Expr::Nil)
+    fn call(&self, args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError> {
+        self.arity.check(&self.id, args)?;
+        // TODO: Support variadic functions
+        let mut arg_env = Environment::extend(env.clone_ref());
+        let mut arg_index: usize = 0;
+        for expr in resolve_args(args, env.clone_ref())? {
+            arg_env.define(&self.args[arg_index].id(), expr);
+            arg_index += 1;
+        }
+        eval_exprs(&self.function, arg_env.into_ref())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::modules::{core_module};
 
     #[test]
     fn test_calls_native_callable() {
-        let mut env = Environment::new();
-        env.merge(core_module());
+        let env = Environment::with_core_module().into_ref();
 
         assert_eq!(
-            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env.into_ref()).unwrap(),
+            eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env).unwrap(),
             Expr::number(4.)
         );
     }
 
     #[test]
-    fn test_checks_arity() {
-        let mut env = Environment::new();
-        env.merge(core_module());
+    fn test_calls_fn() {
+        let env = Environment::with_core_module().into_ref();
 
-        let env_ref = env.into_ref();
+        eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
+
         assert_eq!(
-            eval("(def a 3 4)", env_ref.clone_ref()),
+            eval("(f 1 2)", env.clone_ref()),
+            Ok(Expr::number(3.))
+        );
+    }
+
+    #[test]
+    fn test_checks_arity() {
+        let env = Environment::with_core_module().into_ref();
+
+        assert_eq!(
+            eval("(def a 3 4)", env.clone_ref()),
             Err(HError::InvalidArity("def".to_string(), Arity::Range(1,2)))
         );
 
         assert_eq!(
-            eval("(set! a)", env_ref.clone_ref()),
+            eval("(set! a)", env.clone_ref()),
             Err(HError::InvalidArity("set!".to_string(), Arity::Count(2)))
         );
     }

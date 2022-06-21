@@ -4,7 +4,6 @@ use rustyline::{Editor, Result};
 use crate::{
     environment::Environment,
     interpreter::eval,
-    modules::{core_module},
 };
 
 mod environment;
@@ -17,16 +16,14 @@ mod scanner;
 
 
 fn main() -> Result<()> {
-    let mut env = Environment::new();
-    env.merge(core_module());
-    let env_ref = env.into_ref();
+    let env = Environment::with_core_module().into_ref();
 
     let mut rl = Editor::<()>::new();
     loop {
         let readline = rl.readline(">> ");
         match readline {
             Ok(line) => {
-                match eval(&line, env_ref.clone_ref()) {
+                match eval(&line, env.clone_ref()) {
                     Ok(expr) => {
                         println!("{}", expr);
                         rl.add_history_entry(line);
