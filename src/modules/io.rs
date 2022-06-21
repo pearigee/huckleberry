@@ -2,14 +2,12 @@ use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
     expr::{Arity, Expr},
-    interpreter::eval_expr,
+    interpreter::{resolve_args},
 };
 
 fn print_resolved_exprs(exprs: &[Expr], env: EnvironmentRef) -> Result<Expr, HError> {
-    let resolved_args = exprs.iter()
-                    .map(|expr| eval_expr(expr, env.clone_ref()));
-    for expr in resolved_args {
-        print!("{}", expr?);
+    for expr in resolve_args(exprs, env)? {
+        print!("{}", expr);
     }
     Ok(Expr::Nil)
 }

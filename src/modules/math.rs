@@ -2,24 +2,25 @@ use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
     expr::{Arity, Expr},
-    interpreter::eval_expr,
+    modules::utils::resolve_args,
 };
 
-fn check_num(expr: Expr, fun_name: &str) -> Result<f64, HError> {
+fn check_num(expr: &Expr, fun_name: &str) -> Result<f64, HError> {
     match expr {
-        Expr::Number(val) => Ok(*val),
-        _ => Err(HError::InvalidType(fun_name.to_string(), expr)),
+        Expr::Number(val) => Ok(**val),
+        _ => Err(HError::InvalidType(fun_name.to_string(), expr.clone())),
     }
 }
 
 macro_rules! operator {
     ($name:expr, $op:tt) => {
         Expr::native_callable($name, Arity::Range(1, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
-            args.iter()
-            .map(|expr| eval_expr(expr, env.clone_ref()))
-            .reduce(|a, b| {
-                Ok(Expr::number(check_num(a?, $name)? $op check_num(b?, $name)?))
-            }).unwrap()
+            let resolved = resolve_args(args, env)?;
+            let mut result = check_num(&resolved[0], $name)?;
+            for expr in &resolved[1..] {
+                result = result $op check_num(expr, $name)?;
+            }
+            Ok(Expr::number(result))
         })
     };
 }

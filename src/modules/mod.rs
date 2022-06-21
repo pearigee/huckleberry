@@ -5,6 +5,7 @@ use self::{math::math_module, special_forms::special_forms_module, io::io_module
 pub mod math;
 pub mod special_forms;
 pub mod io;
+pub mod utils;
 
 pub fn core_module() -> Environment {
     let mut env = Environment::new();
