@@ -8,7 +8,6 @@ use crate::{environment::EnvironmentRef, error::HError};
 pub enum Arity {
     Count(usize),
     Range(usize, usize),
-    Variadic,
 }
 
 pub struct NativeCallable {
@@ -106,7 +105,6 @@ impl Arity {
         let matches = match self {
             Arity::Count(num) => args.len() == *num,
             Arity::Range(min, max) => *min <= args.len() && args.len() <= *max,
-            Arity::Variadic => true,
         };
 
         if matches {

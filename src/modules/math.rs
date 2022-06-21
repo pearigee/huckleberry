@@ -14,7 +14,7 @@ fn check_num(expr: Expr, fun_name: &str) -> Result<f64, HError> {
 
 macro_rules! operator {
     ($name:expr, $op:tt) => {
-        Expr::native_callable($name, Arity::Variadic, |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+        Expr::native_callable($name, Arity::Range(1, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
             args.iter()
             .map(|expr| eval_expr(expr, env.clone_ref()))
             .reduce(|a, b| {
