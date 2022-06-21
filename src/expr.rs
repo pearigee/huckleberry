@@ -121,6 +121,8 @@ impl std::fmt::Display for Expr {
             Expr::Number(OrderedFloat(value)) => write!(f, "{}", value),
             Expr::Symbol(value) => write!(f, "{}", value),
             Expr::Keyword(value) => write!(f, "{}", value),
+            Expr::String(value) => write!(f, "{}", value),
+            Expr::Nil => write!(f, "nil"),
             val => write!(f, "{:?}", val),
         }
     }
