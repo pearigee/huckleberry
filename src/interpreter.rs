@@ -1,7 +1,7 @@
 use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
-    expr::{Arity, CodeCallable, Expr, NativeCallable},
+    expr::{Arity, Fn, Expr, NativeFn},
     parser::parse,
 };
 
@@ -34,8 +34,8 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
             let (f, args) = list.split_first().unwrap();
             let function = resolve(f, env.clone_ref())?;
             match function {
-                Expr::NativeCallable(callable) => callable.call(args, env),
-                Expr::CodeCallable(callable) => callable.call(args, env),
+                Expr::NativeFn(callable) => callable.call(args, env),
+                Expr::Fn(callable) => callable.call(args, env),
                 value => Err(HError::NotAFunction(format!("{}", value))),
             }
         }
@@ -62,7 +62,7 @@ pub fn resolve_args(args: &[Expr], env: EnvironmentRef) -> Result<Vec<Expr>, HEr
     Ok(result)
 }
 
-impl Callable for NativeCallable {
+impl Callable for NativeFn {
     fn arity(&self) -> &Arity {
         &self.arity
     }
@@ -73,7 +73,7 @@ impl Callable for NativeCallable {
     }
 }
 
-impl Callable for CodeCallable {
+impl Callable for Fn {
     fn arity(&self) -> &Arity {
         &self.arity
     }

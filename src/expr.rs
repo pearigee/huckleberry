@@ -10,13 +10,13 @@ pub enum Arity {
     Range(usize, usize),
 }
 
-pub struct NativeCallable {
+pub struct NativeFn {
     pub id: String,
     pub arity: Arity,
     pub function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
 }
 
-pub struct CodeCallable {
+pub struct Fn {
     pub id: String,
     pub arity: Arity,
     pub args: Vec<Expr>,
@@ -34,8 +34,8 @@ pub enum Expr {
     Symbol(String),
     Vector(Vec<Expr>),
     Map(BTreeMap<Expr, Expr>),
-    NativeCallable(NativeCallable),
-    CodeCallable(CodeCallable),
+    NativeFn(NativeFn),
+    Fn(Fn),
     Nil,
 }
 
@@ -80,12 +80,12 @@ impl Expr {
         Expr::Map(map)
     }
 
-    pub fn native_callable(
+    pub fn native_fn(
         name: &str,
         arity: Arity,
         function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
     ) -> Expr {
-        Expr::NativeCallable(NativeCallable {
+        Expr::NativeFn(NativeFn {
             id: name.to_string(),
             arity,
             function,
@@ -128,27 +128,27 @@ impl std::fmt::Display for Expr {
     }
 }
 
-impl PartialEq for NativeCallable {
+impl PartialEq for NativeFn {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl Eq for NativeCallable {}
+impl Eq for NativeFn {}
 
-impl Ord for NativeCallable {
+impl Ord for NativeFn {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.id.cmp(&other.id)
     }
 }
 
-impl PartialOrd for NativeCallable {
+impl PartialOrd for NativeFn {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.id.cmp(&other.id))
     }
 }
 
-impl std::fmt::Debug for NativeCallable {
+impl std::fmt::Debug for NativeFn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("NativeCallable")
             .field("id", &self.id)
@@ -156,9 +156,9 @@ impl std::fmt::Debug for NativeCallable {
     }
 }
 
-impl Clone for NativeCallable {
+impl Clone for NativeFn {
     fn clone(&self) -> Self {
-        NativeCallable {
+        NativeFn {
             id: self.id.to_string(),
             arity: self.arity.to_owned(),
             function: self.function,
@@ -166,35 +166,35 @@ impl Clone for NativeCallable {
     }
 }
 
-impl PartialEq for CodeCallable {
+impl PartialEq for Fn {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
     }
 }
 
-impl Eq for CodeCallable {}
+impl Eq for Fn {}
 
-impl Ord for CodeCallable {
+impl Ord for Fn {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.id.cmp(&other.id)
     }
 }
 
-impl PartialOrd for CodeCallable {
+impl PartialOrd for Fn {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.id.cmp(&other.id))
     }
 }
 
-impl std::fmt::Debug for CodeCallable {
+impl std::fmt::Debug for Fn {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Fn").field("id", &self.id).finish()
     }
 }
 
-impl Clone for CodeCallable {
+impl Clone for Fn {
     fn clone(&self) -> Self {
-        CodeCallable {
+        Fn {
             id: self.id.to_string(),
             args: self.args.clone(),
             arity: self.arity.to_owned(),

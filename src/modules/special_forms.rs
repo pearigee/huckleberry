@@ -1,7 +1,7 @@
 use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
-    expr::{Arity, CodeCallable, Expr},
+    expr::{Arity, Fn, Expr},
     interpreter::eval_expr,
 };
 
@@ -12,7 +12,7 @@ pub fn special_forms_module() -> Environment {
 
     env.define(
         "def",
-        Expr::native_callable(
+        Expr::native_fn(
             "def",
             Arity::Range(1, 2),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
@@ -29,7 +29,7 @@ pub fn special_forms_module() -> Environment {
 
     env.define(
         "if",
-        Expr::native_callable(
+        Expr::native_fn(
             "if",
             Arity::Range(2,3),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
@@ -47,7 +47,7 @@ pub fn special_forms_module() -> Environment {
 
     env.define(
         "set!",
-        Expr::native_callable(
+        Expr::native_fn(
             "set!",
             Arity::Count(2),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
@@ -64,7 +64,7 @@ pub fn special_forms_module() -> Environment {
 
     env.define(
         "fn",
-        Expr::native_callable(
+        Expr::native_fn(
             "fn",
             Arity::Range(1, usize::MAX),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
@@ -77,7 +77,7 @@ pub fn special_forms_module() -> Environment {
                     code = &args[1..];
                 }
 
-                Ok(Expr::CodeCallable(CodeCallable {
+                Ok(Expr::Fn(Fn {
                     id: format!("{:?}_{:?}", fn_args, code),
                     arity: Arity::Count(fn_args.len()),
                     args: fn_args.clone(),

@@ -7,7 +7,7 @@ use crate::{
 
 macro_rules! num_operator {
     ($name:expr, $op:tt) => {
-        Expr::native_callable($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+        Expr::native_fn($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
             let resolved = resolve_args(args, env)?;
             let first = check_num(&resolved[0], $name)?;
             for expr in &resolved[1..] {
@@ -22,7 +22,7 @@ macro_rules! num_operator {
 
 macro_rules! generic_operator {
     ($name:expr, $op:tt) => {
-        Expr::native_callable($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+        Expr::native_fn($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
             let resolved = resolve_args(args, env)?;
             let first = &resolved[0];
             for expr in &resolved[1..] {

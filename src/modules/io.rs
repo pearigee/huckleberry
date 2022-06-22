@@ -17,7 +17,7 @@ pub fn io_module() -> Environment {
 
     env.define(
         "print",
-        Expr::native_callable(
+        Expr::native_fn(
             "print",
             Arity::Range(0, usize::MAX),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
@@ -29,7 +29,7 @@ pub fn io_module() -> Environment {
 
     env.define(
         "println",
-        Expr::native_callable(
+        Expr::native_fn(
             "println",
             Arity::Range(0, usize::MAX),
             |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
