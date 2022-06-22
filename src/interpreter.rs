@@ -1,6 +1,6 @@
 use crate::{
     environment::{Environment, EnvironmentRef},
-    error::{error, HError},
+    error::HError,
     expr::{Arity, CodeCallable, Expr, NativeCallable},
     parser::parse,
 };
@@ -11,7 +11,7 @@ trait Callable {
 }
 
 pub fn eval(input: &str, env: EnvironmentRef) -> Result<Expr, HError> {
-    let exprs = parse(input);
+    let exprs = parse(input)?;
     eval_exprs(&exprs, env)
 }
 
@@ -27,7 +27,9 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
     match expr {
         Expr::List(list) => {
             if list.is_empty() {
-                error("Invalid empty list")
+                return Err(HError::InvalidEmptyList(
+                    "An empty list is invalid. Should this be a function call?".to_string(),
+                ));
             }
             let (f, args) = list.split_first().unwrap();
             let function = resolve(f, env.clone_ref())?;

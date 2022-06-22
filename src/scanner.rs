@@ -1,4 +1,4 @@
-use crate::error::error;
+use crate::error::HError;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
@@ -33,8 +33,8 @@ struct Scanner {
     source_length: usize,
 }
 
-pub fn scan(input: &str) -> Vec<Token> {
-    Scanner::new(input).scan_tokens().to_vec()
+pub fn scan(input: &str) -> Result<Vec<Token>, HError> {
+    Ok(Scanner::new(input).scan_tokens()?)
 }
 
 impl Scanner {
@@ -49,10 +49,10 @@ impl Scanner {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> &Vec<Token> {
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, HError> {
         while !self.is_at_end() {
             self.start = self.current;
-            self.scan_token();
+            self.scan_token()?;
         }
 
         self.tokens.push(Token {
@@ -60,10 +60,10 @@ impl Scanner {
             line: self.line,
         });
 
-        &self.tokens
+        Ok(self.tokens.clone())
     }
 
-    fn scan_token(&mut self) {
+    fn scan_token(&mut self) -> Result<(), HError> {
         let c = self.advance();
 
         match c {
@@ -73,21 +73,26 @@ impl Scanner {
             Some('}') => self.add_token(TokenType::RightCurly),
             Some('[') => self.add_token(TokenType::LeftSquare),
             Some(']') => self.add_token(TokenType::RightSquare),
-            Some('"') => self.string(),
+            Some('"') => self.string()?,
             Some(':') => self.keyword(),
             Some(' ') | Some('\r') | Some('\t') => (),
             Some('\n') => self.line = self.line + 1,
             _ => {
                 if Scanner::is_digit(c) {
-                    self.number();
+                    self.number()?;
                 } else if Scanner::is_alpha(c) {
                     // This includes booleans and nil.
                     self.symbol();
                 } else {
-                    error(format!("Unexpected character {:?}", c));
+                    return Err(HError::ScannerError(format!(
+                        "Unexpected character {:?}",
+                        c
+                    )));
                 }
             }
         }
+
+        Ok(())
     }
 
     fn add_token(&mut self, token_type: TokenType) {
@@ -122,7 +127,7 @@ impl Scanner {
         self.current >= self.source_length
     }
 
-    fn string(&mut self) {
+    fn string(&mut self) -> Result<(), HError> {
         while self.peek() != Some('"') && !self.is_at_end() {
             if self.peek() == Some('\n') {
                 self.line = self.line + 1;
@@ -131,16 +136,17 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            error("Unterminated string");
+            return Err(HError::ScannerError("Unterminated string".to_string()));
         }
 
         self.advance();
 
         let value: String = self.source[self.start + 1..self.current - 1].to_string();
         self.add_token(TokenType::String(value));
+        Ok(())
     }
 
-    fn number(&mut self) {
+    fn number(&mut self) -> Result<(), HError> {
         while Scanner::is_digit(self.peek()) {
             self.advance();
         }
@@ -154,10 +160,12 @@ impl Scanner {
             }
         }
 
-        let value = self.source[self.start..self.current]
-            .parse::<f64>()
-            .unwrap();
-        self.add_token(TokenType::Number(value));
+        let value = self.source[self.start..self.current].parse::<f64>();
+        match value {
+            Ok(v) => self.add_token(TokenType::Number(v)),
+            Err(_) => return Err(HError::ScannerError("Invalid number".to_string())),
+        };
+        Ok(())
     }
 
     fn symbol(&mut self) {
@@ -230,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_fn_call() {
-        let result = scan("(+ 1 2)");
+        let result = scan("(+ 1 2)").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::LeftParen);
         assert_eq!(result[1].token_type, TokenType::Symbol("+".to_string()));
@@ -241,7 +249,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_values_without_whitespace() {
-        let result = scan("(+ abc\":hello\":hello)");
+        let result = scan("(+ abc\":hello\":hello)").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::LeftParen);
         assert_eq!(result[1].token_type, TokenType::Symbol("+".to_string()));
@@ -259,7 +267,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_parens() {
-        let result = scan("()");
+        let result = scan("()").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::LeftParen);
         assert_eq!(result[1].token_type, TokenType::RightParen);
@@ -268,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_curly_braces() {
-        let result = scan("{}");
+        let result = scan("{}").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::LeftCurly);
         assert_eq!(result[1].token_type, TokenType::RightCurly);
@@ -277,7 +285,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_square_braces() {
-        let result = scan("[]");
+        let result = scan("[]").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::LeftSquare);
         assert_eq!(result[1].token_type, TokenType::RightSquare);
@@ -286,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_booleans() {
-        let result = scan("true false");
+        let result = scan("true false").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::Boolean(true));
         assert_eq!(result[1].token_type, TokenType::Boolean(false));
@@ -295,7 +303,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_keywords() {
-        let result = scan(":hello :world");
+        let result = scan(":hello :world").unwrap();
 
         assert_eq!(
             result[0].token_type,
@@ -309,14 +317,14 @@ mod tests {
 
     #[test]
     fn test_tokenizes_nil() {
-        let result = scan("nil");
+        let result = scan("nil").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::Nil,);
     }
 
     #[test]
     fn test_tokenizes_strings() {
-        let result = scan("\"Test string 1\" \"Test\nstring 2\"");
+        let result = scan("\"Test string 1\" \"Test\nstring 2\"").unwrap();
 
         assert_eq!(
             result[0].token_type,
@@ -330,7 +338,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_numbers() {
-        let result = scan("1 2.34 56.78");
+        let result = scan("1 2.34 56.78").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::Number(1.));
         assert_eq!(result[1].token_type, TokenType::Number(2.34));
@@ -340,7 +348,7 @@ mod tests {
     #[test]
     fn test_tokenizes_symbols() {
         let input = "+ - / * <= >= = ? ! is_symbol? set! hello";
-        let tokens = scan(input);
+        let tokens = scan(input).unwrap();
         let names = input.split(' ').collect::<Vec<&str>>();
 
         for i in 0..tokens.len() - 1 {
@@ -353,7 +361,7 @@ mod tests {
 
     #[test]
     fn test_ignores_whitespace() {
-        let result = scan("( \r \t \n )");
+        let result = scan("( \r \t \n )").unwrap();
 
         assert_eq!(result[0].token_type, TokenType::LeftParen);
         assert_eq!(result[1].token_type, TokenType::RightParen);
@@ -362,7 +370,7 @@ mod tests {
 
     #[test]
     fn test_tracks_line() {
-        let result = scan("(\n \"\n\")");
+        let result = scan("(\n \"\n\")").unwrap();
 
         assert_eq!(result[0].line, 1);
         assert_eq!(result[2].line, 3);

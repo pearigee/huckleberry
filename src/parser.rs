@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    error::error,
+    error::HError,
     expr::Expr,
     scanner::{scan, Token, TokenType},
 };
@@ -12,8 +12,8 @@ struct Parser {
     debug: bool,
 }
 
-pub fn parse(input: &str) -> Vec<Expr> {
-    let tokens = scan(input);
+pub fn parse(input: &str) -> Result<Vec<Expr>, HError> {
+    let tokens = scan(input)?;
     Parser::new(tokens).parse()
 }
 
@@ -26,103 +26,101 @@ impl Parser {
         }
     }
 
-    fn parse(&mut self) -> Vec<Expr> {
-        self.parse_program()
-    }
-
-    fn parse_program(&mut self) -> Vec<Expr> {
+    fn parse(&mut self) -> Result<Vec<Expr>, HError> {
         let mut program: Vec<Expr> = Vec::new();
         while !self.is_at_end() {
-            program.push(self.parse_expression());
+            program.push(self.parse_expression()?);
         }
-        program
+        Ok(program)
     }
 
-    fn parse_expression(&mut self) -> Expr {
+    fn parse_expression(&mut self) -> Result<Expr, HError> {
         let token = self.peek();
 
         match token.token_type {
-            TokenType::LeftParen => {
-                Expr::List(self.parse_vector(TokenType::LeftParen, TokenType::RightParen))
-            }
-            TokenType::LeftSquare => {
-                Expr::Vector(self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare))
-            }
-            TokenType::LeftCurly => Expr::Map(self.parse_map()),
+            TokenType::LeftParen => Ok(Expr::List(
+                self.parse_vector(TokenType::LeftParen, TokenType::RightParen)?,
+            )),
+            TokenType::LeftSquare => Ok(Expr::Vector(
+                self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare)?,
+            )),
+            TokenType::LeftCurly => Ok(Expr::Map(self.parse_map()?)),
             TokenType::Number(value) => {
                 self.advance();
-                Expr::number(value)
+                Ok(Expr::number(value))
             }
             TokenType::Boolean(value) => {
                 self.advance();
-                Expr::Boolean(value)
+                Ok(Expr::boolean(value))
             }
             TokenType::String(value) => {
                 self.advance();
-                Expr::String(value)
+                Ok(Expr::string(&value))
             }
             TokenType::Keyword(value) => {
                 self.advance();
-                Expr::Keyword(value)
+                Ok(Expr::keyword(&value))
             }
             TokenType::Symbol(value) => {
                 self.advance();
-                Expr::Symbol(value)
+                Ok(Expr::symbol(&value))
             }
             TokenType::Nil => {
                 self.advance();
-                Expr::Nil
+                Ok(Expr::nil())
             }
-            _ => error(format!(
-                "Unexpected token {:?} in expression at line {}",
-                token, token.line
-            )),
+            token => Err(HError::ParseError(format!("Unexpected token {:?}", token))),
         }
     }
 
-    fn parse_vector(&mut self, open_token: TokenType, close_token: TokenType) -> Vec<Expr> {
-        self.match_token(open_token);
+    fn parse_vector(
+        &mut self,
+        open_token: TokenType,
+        close_token: TokenType,
+    ) -> Result<Vec<Expr>, HError> {
+        self.match_token(open_token)?;
         let mut expressions: Vec<Expr> = Vec::new();
         while !self.check(&close_token) {
-            expressions.push(self.parse_expression());
+            expressions.push(self.parse_expression()?);
         }
-        self.match_token(close_token);
+        self.match_token(close_token)?;
 
         self.debug(format!("VECTOR {:?}", expressions));
-        expressions
+        Ok(expressions)
     }
 
-    fn parse_map(&mut self) -> BTreeMap<Expr, Expr> {
-        let initial_token = self.match_token(TokenType::LeftCurly);
+    fn parse_map(&mut self) -> Result<BTreeMap<Expr, Expr>, HError> {
+        let initial_token = self.match_token(TokenType::LeftCurly)?;
         let mut expressions: Vec<Expr> = Vec::new();
         while !self.check(&TokenType::RightCurly) {
-            expressions.push(self.parse_expression());
+            expressions.push(self.parse_expression()?);
         }
-        self.match_token(TokenType::RightCurly);
+        self.match_token(TokenType::RightCurly)?;
 
         if expressions.len() % 2 == 0 {
             let mut map: BTreeMap<Expr, Expr> = BTreeMap::new();
             for pair in expressions.chunks(2) {
                 map.insert(pair[0].to_owned(), pair[1].to_owned());
             }
-            map
+            Ok(map)
         } else {
-            error(format!(
+            Err(HError::ParseError(format!(
                 "A map must have an even number of elements! Map opened at line {}.",
                 initial_token.line
-            ));
+            )))
         }
     }
 
-    fn match_token(&mut self, token_type: TokenType) -> Token {
+    fn match_token(&mut self, token_type: TokenType) -> Result<Token, HError> {
         if self.check(&token_type) {
-            return self.advance();
+            Ok(self.advance())
+        } else {
+            Err(HError::ParseError(format!(
+                "Expected {:?} at line {:?}",
+                &token_type,
+                self.peek().line
+            )))
         }
-        error(format!(
-            "Expected {:?} at line {:?}",
-            &token_type,
-            self.peek().line
-        ))
     }
 
     fn check(&self, token_type: &TokenType) -> bool {
@@ -166,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_parses_expression() {
-        let result = parse("(+ 1 1)");
+        let result = parse("(+ 1 1)").unwrap();
 
         assert_eq!(
             result[0],
@@ -176,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_parses_nested_expression() {
-        let result = parse("(+ 1.25 (/ 3 4))");
+        let result = parse("(+ 1.25 (/ 3 4))").unwrap();
 
         assert_eq!(
             result[0],
@@ -190,7 +188,7 @@ mod tests {
 
     #[test]
     fn test_parses_vector() {
-        let result = parse("[1 true nil]");
+        let result = parse("[1 true nil]").unwrap();
 
         assert_eq!(
             result[0],
@@ -200,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_parses_map() {
-        let result = parse("{:key \"value\" [true] false}");
+        let result = parse("{:key \"value\" [true] false}").unwrap();
 
         assert_eq!(
             result[0],
