@@ -1,5 +1,5 @@
 # Objectives
 * Language
-    * Support lambdas
+    * Support simple loops.
 * CLI
     * Explore converting project to lib with embeded `bin/`

@@ -5,6 +5,8 @@ use crate::{
     interpreter::eval_expr,
 };
 
+use super::utils::is_truthy;
+
 pub fn special_forms_module() -> Environment {
     let mut env = Environment::new();
 
@@ -20,6 +22,24 @@ pub fn special_forms_module() -> Environment {
                         Ok(Expr::Nil)
                     }
                     invalid => Err(HError::UnexpectedForm(invalid.clone())),
+                }
+            },
+        ),
+    );
+
+    env.define(
+        "if",
+        Expr::native_callable(
+            "if",
+            Arity::Range(2,3),
+            |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+                let condition = eval_expr(&args[0], env.clone_ref())?;
+                if is_truthy(&condition) {
+                    Ok(eval_expr(&args[1], env.clone_ref())?)
+                } else if args.len() == 3 {
+                    Ok(eval_expr(&args[2], env.clone_ref())?)
+                } else {
+                    Ok(Expr::Nil)
                 }
             },
         ),
@@ -92,6 +112,17 @@ mod tests {
         eval("(def a 2) (def a (+ a 1))", env.clone_ref()).unwrap();
 
         assert_eq!(env.get("a"), Ok(Expr::number(3.)));
+    }
+
+    #[test]
+    fn test_if() {
+        let env = Environment::with_core_module().into_ref();
+
+        assert_eq!(eval("(if (< 1 2) 1 2)", env.clone_ref()), Ok(Expr::number(1.)));
+        assert_eq!(eval("(if (> 1 2) 1 2)", env.clone_ref()), Ok(Expr::number(2.)));
+        assert_eq!(eval("(if false 1 2)", env.clone_ref()), Ok(Expr::number(2.)));
+        assert_eq!(eval("(if nil 1 2)", env.clone_ref()), Ok(Expr::number(2.)));
+        assert_eq!(eval("(if \"hello\" 1 2)", env.clone_ref()), Ok(Expr::number(1.)));
     }
 
     #[test]

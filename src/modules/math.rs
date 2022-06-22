@@ -2,15 +2,8 @@ use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
     expr::{Arity, Expr},
-    modules::utils::resolve_args,
+    modules::utils::{resolve_args, check_num},
 };
-
-fn check_num(expr: &Expr, fun_name: &str) -> Result<f64, HError> {
-    match expr {
-        Expr::Number(val) => Ok(**val),
-        _ => Err(HError::InvalidType(fun_name.to_string(), expr.clone())),
-    }
-}
 
 macro_rules! operator {
     ($name:expr, $op:tt) => {
