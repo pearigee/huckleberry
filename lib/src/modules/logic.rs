@@ -2,7 +2,7 @@ use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
     expr::{Arity, Expr},
-    modules::utils::{resolve_args, check_num},
+    modules::utils::{check_num, resolve_args},
 };
 
 macro_rules! num_operator {
@@ -113,7 +113,10 @@ mod tests {
             Ok(Expr::boolean(false))
         );
         assert_eq!(
-            eval("(!= {\"key\" :value} {\"key\" :value})", env_ref.clone_ref()),
+            eval(
+                "(!= {\"key\" :value} {\"key\" :value})",
+                env_ref.clone_ref()
+            ),
             Ok(Expr::boolean(false))
         );
     }

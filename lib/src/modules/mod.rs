@@ -1,12 +1,14 @@
 use crate::environment::Environment;
 
-use self::{io::io_module, math::math_module, special_forms::special_forms_module, logic::logic_module};
+use self::{
+    io::io_module, logic::logic_module, math::math_module, special_forms::special_forms_module,
+};
 
 pub mod io;
+pub mod logic;
 pub mod math;
 pub mod special_forms;
 pub mod utils;
-pub mod logic;
 
 pub fn core_module() -> Environment {
     let mut env = Environment::new();

@@ -1,7 +1,7 @@
 use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
-    expr::{Arity, Fn, Expr, NativeFn},
+    expr::{Arity, Expr, Fn, NativeFn},
     parser::parse,
 };
 

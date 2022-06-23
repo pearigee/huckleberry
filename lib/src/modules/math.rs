@@ -2,7 +2,7 @@ use crate::{
     environment::{Environment, EnvironmentRef},
     error::HError,
     expr::{Arity, Expr},
-    modules::utils::{resolve_args, check_num},
+    modules::utils::{check_num, resolve_args},
 };
 
 macro_rules! operator {
