@@ -1,9 +1,11 @@
 use crate::env::Env;
 
 use self::{
-    io::io_module, logic::logic_module, math::math_module, special_forms::special_forms_module,
+    data::data_module, io::io_module, logic::logic_module, math::math_module,
+    special_forms::special_forms_module,
 };
 
+pub mod data;
 pub mod io;
 pub mod logic;
 pub mod math;
@@ -16,5 +18,6 @@ pub fn core_module() -> Env {
     env.merge(special_forms_module());
     env.merge(logic_module());
     env.merge(io_module());
+    env.merge(data_module());
     env
 }

@@ -21,7 +21,10 @@ pub fn special_forms_module() -> Env {
                         env.define(&value, eval_expr(&args[1], env.clone_ref())?);
                         Ok(Expr::Nil)
                     }
-                    invalid => Err(HError::UnexpectedForm(invalid.clone())),
+                    invalid => Err(HError::UnexpectedForm(
+                        "Only symbols can be defined".to_string(),
+                        invalid.clone(),
+                    )),
                 }
             },
         ),
@@ -56,7 +59,10 @@ pub fn special_forms_module() -> Env {
                         env.set(&value, eval_expr(&args[1], env.clone_ref())?)?;
                         Ok(Expr::Nil)
                     }
-                    invalid => Err(HError::UnexpectedForm(invalid.clone())),
+                    invalid => Err(HError::UnexpectedForm(
+                        "Only symbols can be set".to_string(),
+                        invalid.clone(),
+                    )),
                 }
             },
         ),
@@ -70,7 +76,12 @@ pub fn special_forms_module() -> Env {
             |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
                 let fn_args = match &args[0] {
                     Expr::Vector(values) => values,
-                    value => return Err(HError::UnexpectedForm(value.clone())),
+                    value => {
+                        return Err(HError::UnexpectedForm(
+                            "Expected an argument vector".to_string(),
+                            value.clone(),
+                        ))
+                    }
                 };
                 let mut code: &[Expr] = &[Expr::Nil];
                 if args.len() > 1 {

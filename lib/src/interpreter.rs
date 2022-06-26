@@ -50,7 +50,10 @@ pub fn eval_expr(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
 pub fn resolve(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
     match expr {
         Expr::Symbol(id) => env.get(&id),
-        _ => Err(HError::UnexpectedForm(expr.to_owned())),
+        _ => Err(HError::UnexpectedForm(
+            "Only symbols are resolvable".to_string(),
+            expr.to_owned(),
+        )),
     }
 }
 
