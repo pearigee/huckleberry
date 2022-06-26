@@ -1,12 +1,4 @@
-use crate::{env::EnvRef, error::HError, expr::Expr, interpreter::eval_expr};
-
-pub fn resolve_args(args: &[Expr], env: EnvRef) -> Result<Vec<Expr>, HError> {
-    let mut result = Vec::new();
-    for expr in args {
-        result.push(eval_expr(expr, env.clone_ref())?);
-    }
-    Ok(result)
-}
+use crate::{error::HError, expr::Expr};
 
 pub fn check_num(expr: &Expr, fun_name: &str) -> Result<f64, HError> {
     match expr {

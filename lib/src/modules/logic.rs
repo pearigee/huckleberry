@@ -2,7 +2,8 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr},
-    modules::utils::{check_num, resolve_args},
+    interpreter::resolve_args,
+    modules::utils::check_num,
 };
 
 macro_rules! num_operator {
