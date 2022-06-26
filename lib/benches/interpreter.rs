@@ -9,11 +9,11 @@ fn fibonacci_recursion(c: &mut Criterion) {
         (def fib (fn [n] 
             (if (< n 2) 1 
                 (+ (fib (- n 1)) (fib (- n 2))))))
-        (fib 25)",
+        (fib 20)",
     )
     .unwrap();
 
-    c.bench_function("fib_recursion_25", |b| {
+    c.bench_function("fib_recursion_20", |b| {
         b.iter(|| eval_exprs(&exprs, env.clone_ref()))
     });
 }
