@@ -1,8 +1,8 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use huckleberry_lib::{environment::Environment, interpreter::eval_exprs, parser::parse};
+use huckleberry_lib::{env::Env, interpreter::eval_exprs, parser::parse};
 
 fn fibonacci_recursion(c: &mut Criterion) {
-    let env = Environment::with_core_module().into_ref();
+    let env = Env::with_core_module().into_ref();
     // Preparse the code to restict performance measurement to the interpreter.
     let exprs = parse(
         "

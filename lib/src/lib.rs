@@ -1,4 +1,4 @@
-pub mod environment;
+pub mod env;
 pub mod error;
 pub mod expr;
 pub mod interpreter;

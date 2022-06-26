@@ -2,32 +2,32 @@ use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use crate::{error::HError, expr::Expr, modules::core_module};
 
-pub struct EnvironmentRef(Rc<RefCell<Option<Environment>>>);
+pub struct EnvRef(Rc<RefCell<Option<Env>>>);
 
-pub struct Environment {
+pub struct Env {
     vars: BTreeMap<String, Expr>,
-    enclosing: EnvironmentRef,
+    enclosing: EnvRef,
 }
 
 fn new_rc_ref_cell<T>(x: T) -> Rc<RefCell<T>> {
     Rc::new(RefCell::new(x))
 }
 
-impl EnvironmentRef {
-    pub fn nil() -> EnvironmentRef {
-        EnvironmentRef(new_rc_ref_cell(None))
+impl EnvRef {
+    pub fn nil() -> EnvRef {
+        EnvRef(new_rc_ref_cell(None))
     }
 
-    pub fn new(env: Environment) -> EnvironmentRef {
-        EnvironmentRef(new_rc_ref_cell(Some(env)))
+    pub fn new(env: Env) -> EnvRef {
+        EnvRef(new_rc_ref_cell(Some(env)))
     }
 
     pub fn is_some(&self) -> bool {
         self.0.borrow().as_ref().is_some()
     }
 
-    pub fn clone_ref(&self) -> EnvironmentRef {
-        EnvironmentRef(Rc::clone(&self.0))
+    pub fn clone_ref(&self) -> EnvRef {
+        EnvRef(Rc::clone(&self.0))
     }
 
     pub fn get(&self, id: &str) -> Result<Expr, HError> {
@@ -55,22 +55,22 @@ impl EnvironmentRef {
     }
 }
 
-impl Environment {
-    pub fn new() -> Environment {
-        Environment {
+impl Env {
+    pub fn new() -> Env {
+        Env {
             vars: BTreeMap::new(),
-            enclosing: EnvironmentRef::nil(),
+            enclosing: EnvRef::nil(),
         }
     }
 
-    pub fn with_core_module() -> Environment {
-        let mut env = Environment::new();
+    pub fn with_core_module() -> Env {
+        let mut env = Env::new();
         env.merge(core_module());
         env
     }
 
-    pub fn extend(env_ref: EnvironmentRef) -> Environment {
-        Environment {
+    pub fn extend(env_ref: EnvRef) -> Env {
+        Env {
             vars: BTreeMap::new(),
             enclosing: env_ref,
         }
@@ -80,7 +80,7 @@ impl Environment {
         self.vars.insert(key.to_string(), value);
     }
 
-    pub fn merge(&mut self, env: Environment) {
+    pub fn merge(&mut self, env: Env) {
         self.vars.extend(env.vars.clone())
     }
 
@@ -107,8 +107,8 @@ impl Environment {
         }
     }
 
-    pub fn into_ref(self) -> EnvironmentRef {
-        EnvironmentRef::new(self)
+    pub fn into_ref(self) -> EnvRef {
+        EnvRef::new(self)
     }
 }
 
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn test_can_define_variables() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.define("key", Expr::string("value"));
 
         assert_eq!(env.get("key").unwrap(), Expr::string("value"));
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_can_overwrite_vars() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.define("key", Expr::string("value"));
         env.define("key", Expr::number(1.));
 
@@ -135,12 +135,12 @@ mod tests {
 
     #[test]
     fn test_can_set_vars() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.define("key", Expr::string("value"));
 
         let env_ref = env.into_ref();
 
-        let mut nested_env = Environment::extend(env_ref.clone_ref());
+        let mut nested_env = Env::extend(env_ref.clone_ref());
         nested_env.set("key", Expr::number(1.)).unwrap();
 
         assert_eq!(env_ref.get("key").unwrap(), Expr::number(1.));
@@ -148,14 +148,14 @@ mod tests {
 
     #[test]
     fn test_can_extend_an_environment() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.define("a", Expr::string("a"));
         env.define("b", Expr::string("b"));
 
         let env_ref = env.into_ref();
 
         {
-            let mut extended_env = Environment::extend(env_ref.clone_ref());
+            let mut extended_env = Env::extend(env_ref.clone_ref());
             extended_env.define("a", Expr::string("a_shadow"));
 
             assert_eq!(extended_env.get("a").unwrap(), Expr::string("a_shadow"));

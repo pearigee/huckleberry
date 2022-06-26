@@ -1,5 +1,5 @@
 use crate::{
-    environment::{Environment, EnvironmentRef},
+    env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr, Fn},
     interpreter::eval_expr,
@@ -7,15 +7,15 @@ use crate::{
 
 use super::utils::is_truthy;
 
-pub fn special_forms_module() -> Environment {
-    let mut env = Environment::new();
+pub fn special_forms_module() -> Env {
+    let mut env = Env::new();
 
     env.define(
         "def",
         Expr::native_fn(
             "def",
             Arity::Range(1, 2),
-            |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
                 match &args[0] {
                     Expr::Symbol(value) => {
                         env.define(&value, eval_expr(&args[1], env.clone_ref())?);
@@ -32,7 +32,7 @@ pub fn special_forms_module() -> Environment {
         Expr::native_fn(
             "if",
             Arity::Range(2, 3),
-            |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
                 let condition = eval_expr(&args[0], env.clone_ref())?;
                 if is_truthy(&condition) {
                     Ok(eval_expr(&args[1], env.clone_ref())?)
@@ -50,7 +50,7 @@ pub fn special_forms_module() -> Environment {
         Expr::native_fn(
             "set!",
             Arity::Count(2),
-            |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
                 match &args[0] {
                     Expr::Symbol(value) => {
                         env.set(&value, eval_expr(&args[1], env.clone_ref())?)?;
@@ -67,7 +67,7 @@ pub fn special_forms_module() -> Environment {
         Expr::native_fn(
             "fn",
             Arity::Range(1, usize::MAX),
-            |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
                 let fn_args = match &args[0] {
                     Expr::Vector(values) => values,
                     value => return Err(HError::UnexpectedForm(value.clone())),
@@ -94,11 +94,11 @@ pub fn special_forms_module() -> Environment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{environment::Environment, interpreter::eval};
+    use crate::{env::Env, interpreter::eval};
 
     #[test]
     fn test_def() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         let result = eval("(def a 2) (+ a 1)", env);
 
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_def_overwrite() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         eval("(def a 2) (def a (+ a 1))", env.clone_ref()).unwrap();
 
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_if() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         assert_eq!(
             eval("(if (< 1 2) 1 2)", env.clone_ref()),
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_set() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         eval("(def a 2) (set! a 1) a", env.clone_ref()).unwrap();
 
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn test_set_error_on_unset() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         let result = eval("(set! a 1)", env.clone_ref());
 
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_creates_lambdas() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_empty_lambda_returns_nil() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         eval("(def f (fn []))", env.clone_ref()).unwrap();
 

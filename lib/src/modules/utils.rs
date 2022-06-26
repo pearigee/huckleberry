@@ -1,6 +1,6 @@
-use crate::{environment::EnvironmentRef, error::HError, expr::Expr, interpreter::eval_expr};
+use crate::{env::EnvRef, error::HError, expr::Expr, interpreter::eval_expr};
 
-pub fn resolve_args(args: &[Expr], env: EnvironmentRef) -> Result<Vec<Expr>, HError> {
+pub fn resolve_args(args: &[Expr], env: EnvRef) -> Result<Vec<Expr>, HError> {
     let mut result = Vec::new();
     for expr in args {
         result.push(eval_expr(expr, env.clone_ref())?);

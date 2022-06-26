@@ -1,9 +1,9 @@
-use huckleberry_lib::{environment::Environment, interpreter::eval};
+use huckleberry_lib::{env::Env, interpreter::eval};
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 
 fn main() -> Result<()> {
-    let env = Environment::with_core_module().into_ref();
+    let env = Env::with_core_module().into_ref();
 
     let mut rl = Editor::<()>::new();
     loop {

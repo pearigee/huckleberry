@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use ordered_float::OrderedFloat;
 
-use crate::{environment::EnvironmentRef, error::HError};
+use crate::{env::EnvRef, error::HError};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub enum Arity {
@@ -13,7 +13,7 @@ pub enum Arity {
 pub struct NativeFn {
     pub id: String,
     pub arity: Arity,
-    pub function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
+    pub function: fn(args: &[Expr], env: EnvRef) -> Result<Expr, HError>,
 }
 
 pub struct Fn {
@@ -21,7 +21,7 @@ pub struct Fn {
     pub arity: Arity,
     pub args: Vec<Expr>,
     pub function: Vec<Expr>,
-    pub closure: EnvironmentRef,
+    pub closure: EnvRef,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -83,7 +83,7 @@ impl Expr {
     pub fn native_fn(
         name: &str,
         arity: Arity,
-        function: fn(args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>,
+        function: fn(args: &[Expr], env: EnvRef) -> Result<Expr, HError>,
     ) -> Expr {
         Expr::NativeFn(NativeFn {
             id: name.to_string(),

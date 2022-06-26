@@ -1,21 +1,21 @@
 use crate::{
-    environment::{Environment, EnvironmentRef},
+    env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr, Fn, NativeFn},
     parser::parse,
 };
 
 trait Callable {
-    fn call(&self, args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError>;
+    fn call(&self, args: &[Expr], env: EnvRef) -> Result<Expr, HError>;
     fn arity(&self) -> &Arity;
 }
 
-pub fn eval(input: &str, env: EnvironmentRef) -> Result<Expr, HError> {
+pub fn eval(input: &str, env: EnvRef) -> Result<Expr, HError> {
     let exprs = parse(input)?;
     eval_exprs(&exprs, env)
 }
 
-pub fn eval_exprs(exprs: &Vec<Expr>, env: EnvironmentRef) -> Result<Expr, HError> {
+pub fn eval_exprs(exprs: &Vec<Expr>, env: EnvRef) -> Result<Expr, HError> {
     let mut result = Expr::Nil;
     for expr in exprs {
         result = eval_expr(expr, env.clone_ref())?;
@@ -23,7 +23,7 @@ pub fn eval_exprs(exprs: &Vec<Expr>, env: EnvironmentRef) -> Result<Expr, HError
     Ok(result)
 }
 
-pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
+pub fn eval_expr(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
     match expr {
         Expr::List(list) => {
             if list.is_empty() {
@@ -47,14 +47,14 @@ pub fn eval_expr(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
     }
 }
 
-pub fn resolve(expr: &Expr, env: EnvironmentRef) -> Result<Expr, HError> {
+pub fn resolve(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
     match expr {
         Expr::Symbol(id) => env.get(&id),
         _ => Err(HError::UnexpectedForm(expr.to_owned())),
     }
 }
 
-pub fn resolve_args(args: &[Expr], env: EnvironmentRef) -> Result<Vec<Expr>, HError> {
+pub fn resolve_args(args: &[Expr], env: EnvRef) -> Result<Vec<Expr>, HError> {
     let mut result = Vec::new();
     for expr in args.iter() {
         result.push(eval_expr(expr, env.clone_ref())?);
@@ -67,7 +67,7 @@ impl Callable for NativeFn {
         &self.arity
     }
 
-    fn call(&self, args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError> {
+    fn call(&self, args: &[Expr], env: EnvRef) -> Result<Expr, HError> {
         self.arity.check(&self.id, args)?;
         (self.function)(args, env)
     }
@@ -78,10 +78,10 @@ impl Callable for Fn {
         &self.arity
     }
 
-    fn call(&self, args: &[Expr], env: EnvironmentRef) -> Result<Expr, HError> {
+    fn call(&self, args: &[Expr], env: EnvRef) -> Result<Expr, HError> {
         self.arity.check(&self.id, args)?;
         // TODO: Support variadic functions
-        let mut arg_env = Environment::extend(env.clone_ref());
+        let mut arg_env = Env::extend(env.clone_ref());
         let mut arg_index: usize = 0;
         for expr in resolve_args(args, env.clone_ref())? {
             arg_env.define(&self.args[arg_index].id(), expr);
@@ -97,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_calls_native_callable() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         assert_eq!(
             eval("(+ 1 (/ (* 3 (- 5 2)) 3))", env).unwrap(),
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_calls_fn() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_checks_arity() {
-        let env = Environment::with_core_module().into_ref();
+        let env = Env::with_core_module().into_ref();
 
         assert_eq!(
             eval("(def a 3 4)", env.clone_ref()),

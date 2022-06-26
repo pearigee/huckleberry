@@ -1,5 +1,5 @@
 use crate::{
-    environment::{Environment, EnvironmentRef},
+    env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr},
     modules::utils::{check_num, resolve_args},
@@ -7,7 +7,7 @@ use crate::{
 
 macro_rules! num_operator {
     ($name:expr, $op:tt) => {
-        Expr::native_fn($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+        Expr::native_fn($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             let resolved = resolve_args(args, env)?;
             let first = check_num(&resolved[0], $name)?;
             for expr in &resolved[1..] {
@@ -22,7 +22,7 @@ macro_rules! num_operator {
 
 macro_rules! generic_operator {
     ($name:expr, $op:tt) => {
-        Expr::native_fn($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+        Expr::native_fn($name, Arity::Range(2, usize::MAX), |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             let resolved = resolve_args(args, env)?;
             let first = &resolved[0];
             for expr in &resolved[1..] {
@@ -35,8 +35,8 @@ macro_rules! generic_operator {
     };
 }
 
-pub fn logic_module() -> Environment {
-    let mut env = Environment::new();
+pub fn logic_module() -> Env {
+    let mut env = Env::new();
 
     env.define("<", num_operator!("<", <));
     env.define("<=", num_operator!("<=", <=));
@@ -52,11 +52,11 @@ pub fn logic_module() -> Environment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{environment::Environment, interpreter::eval};
+    use crate::{env::Env, interpreter::eval};
 
     #[test]
     fn test_eq() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(logic_module());
         let env_ref = env.into_ref();
 
@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_not_eq() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(logic_module());
         let env_ref = env.into_ref();
 
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_lt_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(logic_module());
         let env_ref = env.into_ref();
 
@@ -139,7 +139,7 @@ mod tests {
 
     #[test]
     fn test_lt_eq_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(logic_module());
         let env_ref = env.into_ref();
 
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn test_gt_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(logic_module());
         let env_ref = env.into_ref();
 
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn test_gt_eq_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(logic_module());
         let env_ref = env.into_ref();
 

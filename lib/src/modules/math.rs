@@ -1,5 +1,5 @@
 use crate::{
-    environment::{Environment, EnvironmentRef},
+    env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr},
     modules::utils::{check_num, resolve_args},
@@ -7,7 +7,7 @@ use crate::{
 
 macro_rules! operator {
     ($name:expr, $op:tt) => {
-        Expr::native_fn($name, Arity::Range(1, usize::MAX), |args: &[Expr], env: EnvironmentRef| -> Result<Expr, HError> {
+        Expr::native_fn($name, Arity::Range(1, usize::MAX), |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             let resolved = resolve_args(args, env)?;
             let mut result = check_num(&resolved[0], $name)?;
             for expr in &resolved[1..] {
@@ -18,8 +18,8 @@ macro_rules! operator {
     };
 }
 
-pub fn math_module() -> Environment {
-    let mut env = Environment::new();
+pub fn math_module() -> Env {
+    let mut env = Env::new();
 
     env.define("+", operator!("+", +));
     env.define("-", operator!("-", -));
@@ -32,11 +32,11 @@ pub fn math_module() -> Environment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{environment::Environment, interpreter::eval, modules::math::math_module};
+    use crate::{env::Env, interpreter::eval, modules::math::math_module};
 
     #[test]
     fn test_add_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(math_module());
         let env_ref = env.into_ref();
 
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_sub_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(math_module());
 
         assert_eq!(
@@ -61,7 +61,7 @@ mod tests {
 
     #[test]
     fn test_mul_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(math_module());
 
         assert_eq!(
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_div_op() {
-        let mut env = Environment::new();
+        let mut env = Env::new();
         env.merge(math_module());
 
         assert_eq!(eval("(/ 20 2 2)", env.into_ref()), Ok(Expr::number(5.)));
