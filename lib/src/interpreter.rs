@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::{
     env::{Env, EnvRef},
     error::HError,
@@ -43,6 +45,25 @@ pub fn eval_expr(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
             Ok(expr) => Ok(expr.to_owned()),
             _ => Err(HError::UnboundVar(value.to_string())),
         },
+        Expr::Map(map) => {
+            let resolved_map: BTreeMap<Expr, Expr> = map
+                .into_iter()
+                .map(|(key, value)| {
+                    Ok((
+                        eval_expr(&key, env.clone_ref())?,
+                        eval_expr(&value, env.clone_ref())?,
+                    ))
+                })
+                .collect::<Result<_, _>>()?;
+            Ok(Expr::Map(resolved_map))
+        }
+        Expr::Vector(vector) => {
+            let resolved_vector: Vec<Expr> = vector
+                .into_iter()
+                .map(|value| eval_expr(&value, env.clone_ref()))
+                .collect::<Result<_, _>>()?;
+            Ok(Expr::Vector(resolved_vector))
+        }
         _ => Ok(expr.to_owned()),
     }
 }
@@ -129,6 +150,26 @@ mod tests {
         assert_eq!(
             eval("(set! a)", env.clone_ref()),
             Err(HError::InvalidArity("set!".to_string(), Arity::Count(2)))
+        );
+    }
+
+    #[test]
+    fn test_resolves_map() {
+        let env = Env::with_core_module().into_ref();
+
+        assert_eq!(
+            eval("{:a (+ 1 2)}", env.clone_ref()),
+            Ok(Expr::map(&[(Expr::keyword(":a"), Expr::number(3.)),]))
+        );
+    }
+
+    #[test]
+    fn test_resolves_vector() {
+        let env = Env::with_core_module().into_ref();
+
+        assert_eq!(
+            eval("[1 (+ 1 2)]", env.clone_ref()),
+            Ok(Expr::vector(&[Expr::number(1.), Expr::number(3.),]))
         );
     }
 }
