@@ -104,12 +104,23 @@ impl Callable for Fn {
 
     fn call(&self, args: &[Expr], env: EnvRef) -> Result<Expr, HError> {
         self.arity.check(&self.id, args)?;
-        // TODO: Support variadic functions
         let mut arg_env = Env::extend(env.clone_ref());
-        let mut arg_index: usize = 0;
-        for expr in resolve_args(args, env.clone_ref())? {
-            arg_env.def(&self.args[arg_index].id(), expr);
-            arg_index += 1;
+        for (i, binding) in self.args.iter().enumerate() {
+            match binding {
+                Expr::Symbol(ref name) => {
+                    arg_env.def(name, eval_expr(&args[i], env.clone_ref())?.clone())
+                }
+                Expr::Ampersand => {
+                    arg_env.def(&self.args[i + 1].id(), Expr::Vector(args[i..].to_vec()));
+                    break;
+                }
+                _ => {
+                    return Err(HError::UnexpectedForm(
+                        "Expected a symbol argument".to_string(),
+                        self.args[i].clone(),
+                    ))
+                }
+            }
         }
         eval_exprs(&self.function, arg_env.into_ref())
     }
@@ -136,6 +147,33 @@ mod tests {
         eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
         assert_eq!(eval("(f 1 2)", env.clone_ref()), Ok(Expr::number(3.)));
+    }
+
+    #[test]
+    fn test_calls_variadic_fn() {
+        let env = Env::with_core_module().into_ref();
+
+        eval("(def f (fn [a &b] [a b]))", env.clone_ref()).unwrap();
+
+        assert_eq!(
+            eval("(f 1 2 3 4)", env.clone_ref()),
+            Ok(Expr::vector(&[
+                Expr::number(1.),
+                Expr::vector(&[Expr::number(2.), Expr::number(3.), Expr::number(4.),])
+            ]))
+        );
+
+        eval("(def f (fn [&a] a))", env.clone_ref()).unwrap();
+
+        assert_eq!(
+            eval("(f 1 2 3 4)", env.clone_ref()),
+            Ok(Expr::vector(&[
+                Expr::number(1.),
+                Expr::number(2.),
+                Expr::number(3.),
+                Expr::number(4.),
+            ]))
+        );
     }
 
     #[test]
