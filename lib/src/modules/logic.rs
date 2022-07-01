@@ -39,13 +39,13 @@ macro_rules! generic_operator {
 pub fn logic_module() -> Env {
     let mut env = Env::new();
 
-    env.define("<", num_operator!("<", <));
-    env.define("<=", num_operator!("<=", <=));
-    env.define(">", num_operator!(">", >));
-    env.define(">=", num_operator!(">=", >=));
+    env.def("<", num_operator!("<", <));
+    env.def("<=", num_operator!("<=", <=));
+    env.def(">", num_operator!(">", >));
+    env.def(">=", num_operator!(">=", >=));
 
-    env.define("=", generic_operator!("=", ==));
-    env.define("!=", generic_operator!("!=", !=));
+    env.def("=", generic_operator!("=", ==));
+    env.def("!=", generic_operator!("!=", !=));
 
     env
 }

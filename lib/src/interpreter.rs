@@ -108,7 +108,7 @@ impl Callable for Fn {
         let mut arg_env = Env::extend(env.clone_ref());
         let mut arg_index: usize = 0;
         for expr in resolve_args(args, env.clone_ref())? {
-            arg_env.define(&self.args[arg_index].id(), expr);
+            arg_env.def(&self.args[arg_index].id(), expr);
             arg_index += 1;
         }
         eval_exprs(&self.function, arg_env.into_ref())

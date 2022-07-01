@@ -1,6 +1,10 @@
 use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
-use crate::{error::HError, expr::Expr, modules::core_module};
+use crate::{
+    error::HError,
+    expr::{Arity, Expr},
+    modules::core_module,
+};
 
 pub struct EnvRef(Rc<RefCell<Option<Env>>>);
 
@@ -46,12 +50,25 @@ impl EnvRef {
             .set(key, value)
     }
 
-    pub fn define(&self, key: &str, value: Expr) {
+    pub fn def(&self, key: &str, value: Expr) {
         self.0
             .borrow_mut()
             .as_mut()
             .expect("Environment not found")
-            .define(key, value);
+            .def(key, value);
+    }
+
+    pub fn defn(
+        &mut self,
+        name: &str,
+        arity: Arity,
+        fun: fn(args: &[Expr], env: EnvRef) -> Result<Expr, HError>,
+    ) {
+        self.0
+            .borrow_mut()
+            .as_mut()
+            .expect("Environment not found")
+            .defn(name, arity, fun);
     }
 }
 
@@ -76,8 +93,17 @@ impl Env {
         }
     }
 
-    pub fn define(&mut self, key: &str, value: Expr) {
+    pub fn def(&mut self, key: &str, value: Expr) {
         self.vars.insert(key.to_string(), value);
+    }
+
+    pub fn defn(
+        &mut self,
+        name: &str,
+        arity: Arity,
+        fun: fn(args: &[Expr], env: EnvRef) -> Result<Expr, HError>,
+    ) {
+        self.def(name, Expr::native_fn(name, arity, fun));
     }
 
     pub fn merge(&mut self, env: Env) {
@@ -114,21 +140,31 @@ impl Env {
 
 #[cfg(test)]
 mod tests {
+    use crate::interpreter::eval;
+
     use super::*;
 
     #[test]
     fn test_can_define_variables() {
         let mut env = Env::new();
-        env.define("key", Expr::string("value"));
+        env.def("key", Expr::string("value"));
 
         assert_eq!(env.get("key").unwrap(), Expr::string("value"));
     }
 
     #[test]
+    fn test_can_define_native_functions() {
+        let mut env = Env::new();
+        env.defn("return1", Arity::Count(0), |_, _| Ok(Expr::number(1.)));
+
+        assert_eq!(eval("(return1)", env.into_ref()), Ok(Expr::number(1.)));
+    }
+
+    #[test]
     fn test_can_overwrite_vars() {
         let mut env = Env::new();
-        env.define("key", Expr::string("value"));
-        env.define("key", Expr::number(1.));
+        env.def("key", Expr::string("value"));
+        env.def("key", Expr::number(1.));
 
         assert_eq!(env.get("key").unwrap(), Expr::number(1.));
     }
@@ -136,7 +172,7 @@ mod tests {
     #[test]
     fn test_can_set_vars() {
         let mut env = Env::new();
-        env.define("key", Expr::string("value"));
+        env.def("key", Expr::string("value"));
 
         let env_ref = env.into_ref();
 
@@ -149,14 +185,14 @@ mod tests {
     #[test]
     fn test_can_extend_an_environment() {
         let mut env = Env::new();
-        env.define("a", Expr::string("a"));
-        env.define("b", Expr::string("b"));
+        env.def("a", Expr::string("a"));
+        env.def("b", Expr::string("b"));
 
         let env_ref = env.into_ref();
 
         {
             let mut extended_env = Env::extend(env_ref.clone_ref());
-            extended_env.define("a", Expr::string("a_shadow"));
+            extended_env.def("a", Expr::string("a_shadow"));
 
             assert_eq!(extended_env.get("a").unwrap(), Expr::string("a_shadow"));
             assert_eq!(extended_env.get("b").unwrap(), Expr::string("b"));

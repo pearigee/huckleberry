@@ -10,93 +10,81 @@ use super::utils::is_truthy;
 pub fn special_forms_module() -> Env {
     let mut env = Env::new();
 
-    env.define(
+    env.defn(
         "def",
-        Expr::native_fn(
-            "def",
-            Arity::Range(1, 2),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                match &args[0] {
-                    Expr::Symbol(value) => {
-                        env.define(&value, eval_expr(&args[1], env.clone_ref())?);
-                        Ok(Expr::Nil)
-                    }
-                    invalid => Err(HError::UnexpectedForm(
-                        "Only symbols can be defined".to_string(),
-                        invalid.clone(),
-                    )),
-                }
-            },
-        ),
-    );
-
-    env.define(
-        "if",
-        Expr::native_fn(
-            "if",
-            Arity::Range(2, 3),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                let condition = eval_expr(&args[0], env.clone_ref())?;
-                if is_truthy(&condition) {
-                    Ok(eval_expr(&args[1], env.clone_ref())?)
-                } else if args.len() == 3 {
-                    Ok(eval_expr(&args[2], env.clone_ref())?)
-                } else {
+        Arity::Range(1, 2),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            match &args[0] {
+                Expr::Symbol(value) => {
+                    env.def(&value, eval_expr(&args[1], env.clone_ref())?);
                     Ok(Expr::Nil)
                 }
-            },
-        ),
+                invalid => Err(HError::UnexpectedForm(
+                    "Only symbols can be defined".to_string(),
+                    invalid.clone(),
+                )),
+            }
+        },
     );
 
-    env.define(
+    env.defn(
+        "if",
+        Arity::Range(2, 3),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let condition = eval_expr(&args[0], env.clone_ref())?;
+            if is_truthy(&condition) {
+                Ok(eval_expr(&args[1], env.clone_ref())?)
+            } else if args.len() == 3 {
+                Ok(eval_expr(&args[2], env.clone_ref())?)
+            } else {
+                Ok(Expr::Nil)
+            }
+        },
+    );
+
+    env.defn(
         "set!",
-        Expr::native_fn(
-            "set!",
-            Arity::Count(2),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                match &args[0] {
-                    Expr::Symbol(value) => {
-                        env.set(&value, eval_expr(&args[1], env.clone_ref())?)?;
-                        Ok(Expr::Nil)
-                    }
-                    invalid => Err(HError::UnexpectedForm(
-                        "Only symbols can be set".to_string(),
-                        invalid.clone(),
-                    )),
+        Arity::Count(2),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            match &args[0] {
+                Expr::Symbol(value) => {
+                    env.set(&value, eval_expr(&args[1], env.clone_ref())?)?;
+                    Ok(Expr::Nil)
                 }
-            },
-        ),
+                invalid => Err(HError::UnexpectedForm(
+                    "Only symbols can be set".to_string(),
+                    invalid.clone(),
+                )),
+            }
+        },
     );
 
-    env.define(
+    env.defn(
         "fn",
-        Expr::native_fn(
-            "fn",
-            Arity::Range(1, usize::MAX),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                let fn_args = match &args[0] {
-                    Expr::Vector(values) => values,
-                    value => {
-                        return Err(HError::UnexpectedForm(
-                            "Expected an argument vector".to_string(),
-                            value.clone(),
-                        ))
-                    }
-                };
-                let mut code: &[Expr] = &[Expr::Nil];
-                if args.len() > 1 {
-                    code = &args[1..];
+        Arity::Range(1, usize::MAX),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let fn_args = match &args[0] {
+                Expr::Vector(values) => values,
+                value => {
+                    return Err(HError::UnexpectedForm(
+                        "Expected an argument vector".to_string(),
+                        value.clone(),
+                    ))
                 }
+            };
+            let mut code: &[Expr] = &[Expr::Nil];
+            if args.len() > 1 {
+                code = &args[1..];
+            }
 
-                Ok(Expr::Fn(Fn {
-                    id: format!("{:?}_{:?}", fn_args, code),
-                    arity: Arity::Count(fn_args.len()),
-                    args: fn_args.clone(),
-                    function: code.into(),
-                    closure: env.clone_ref(),
-                }))
-            },
-        ),
+            Ok(Expr::Fn(Fn {
+                id: format!("{:?}_{:?}", fn_args, code),
+                arity: Arity::Count(fn_args.len()),
+                args: fn_args.clone(),
+                function: code.into(),
+                closure: env.clone_ref(),
+            }))
+        },
     );
 
     env

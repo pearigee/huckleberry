@@ -15,29 +15,23 @@ fn print_resolved_exprs(exprs: &[Expr], env: EnvRef) -> Result<Expr, HError> {
 pub fn io_module() -> Env {
     let mut env = Env::new();
 
-    env.define(
+    env.defn(
         "print",
-        Expr::native_fn(
-            "print",
-            Arity::Range(0, usize::MAX),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                print_resolved_exprs(args, env)?;
-                Ok(Expr::Nil)
-            },
-        ),
+        Arity::Range(0, usize::MAX),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            print_resolved_exprs(args, env)?;
+            Ok(Expr::Nil)
+        },
     );
 
-    env.define(
+    env.defn(
         "println",
-        Expr::native_fn(
-            "println",
-            Arity::Range(0, usize::MAX),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                print_resolved_exprs(args, env)?;
-                println!();
-                Ok(Expr::Nil)
-            },
-        ),
+        Arity::Range(0, usize::MAX),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            print_resolved_exprs(args, env)?;
+            println!();
+            Ok(Expr::Nil)
+        },
     );
 
     env

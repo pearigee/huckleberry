@@ -22,10 +22,10 @@ macro_rules! operator {
 pub fn math_module() -> Env {
     let mut env = Env::new();
 
-    env.define("+", operator!("+", +));
-    env.define("-", operator!("-", -));
-    env.define("*", operator!("*", *));
-    env.define("/", operator!("/", /));
+    env.def("+", operator!("+", +));
+    env.def("-", operator!("-", -));
+    env.def("*", operator!("*", *));
+    env.def("/", operator!("/", /));
 
     env
 }

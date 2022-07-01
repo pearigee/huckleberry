@@ -8,40 +8,37 @@ use crate::{
 pub fn data_module() -> Env {
     let mut env = Env::new();
 
-    env.define(
+    env.defn(
         "get",
-        Expr::native_fn(
-            "get",
-            Arity::Count(2),
-            |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-                let resolved = resolve_args(args, env)?;
-                match &resolved[0] {
-                    Expr::Map(map) => match map.get(&resolved[1]) {
+        Arity::Count(2),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let resolved = resolve_args(args, env)?;
+            match &resolved[0] {
+                Expr::Map(map) => match map.get(&resolved[1]) {
+                    Some(value) => Ok(value.clone()),
+                    None => Ok(Expr::Nil),
+                },
+                Expr::Vector(vec) => {
+                    let index = match &resolved[1] {
+                        Expr::Number(value) => ((**value) as usize),
+                        invalid => {
+                            return Err(HError::UnexpectedForm(
+                                "Invalid vector index".to_string(),
+                                invalid.clone(),
+                            ))
+                        }
+                    };
+                    match vec.get(index) {
                         Some(value) => Ok(value.clone()),
                         None => Ok(Expr::Nil),
-                    },
-                    Expr::Vector(vec) => {
-                        let index = match &resolved[1] {
-                            Expr::Number(value) => ((**value) as usize),
-                            invalid => {
-                                return Err(HError::UnexpectedForm(
-                                    "Invalid vector index".to_string(),
-                                    invalid.clone(),
-                                ))
-                            }
-                        };
-                        match vec.get(index) {
-                            Some(value) => Ok(value.clone()),
-                            None => Ok(Expr::Nil),
-                        }
                     }
-                    _ => Err(HError::UnexpectedForm(
-                        "Type does not support `get`".to_string(),
-                        resolved[0].clone(),
-                    )),
                 }
-            },
-        ),
+                _ => Err(HError::UnexpectedForm(
+                    "Type does not support `get`".to_string(),
+                    resolved[0].clone(),
+                )),
+            }
+        },
     );
 
     env
