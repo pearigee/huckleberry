@@ -1,4 +1,4 @@
-use huckleberry_lib::{env::Env, interpreter::eval};
+use huckleberry_lib::{env::Env, evaluator::eval};
 use rustyline::error::ReadlineError;
 use rustyline::{Editor, Result};
 

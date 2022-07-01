@@ -2,7 +2,7 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr, Fn},
-    interpreter::eval_expr,
+    evaluator::eval_expr,
 };
 
 use super::utils::is_truthy;
@@ -111,7 +111,7 @@ pub fn special_forms_module() -> Env {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::Env, interpreter::eval};
+    use crate::{env::Env, evaluator::eval};
 
     #[test]
     fn test_def() {

@@ -2,7 +2,7 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr},
-    interpreter::resolve_args,
+    evaluator::resolve_args,
 };
 
 pub fn data_module() -> Env {
@@ -47,7 +47,7 @@ pub fn data_module() -> Env {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::Env, interpreter::eval};
+    use crate::{env::Env, evaluator::eval};
 
     #[test]
     fn test_get() {

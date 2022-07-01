@@ -2,7 +2,7 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr},
-    interpreter::resolve_args,
+    evaluator::resolve_args,
 };
 
 fn print_resolved_exprs(exprs: &[Expr], env: EnvRef) -> Result<Expr, HError> {

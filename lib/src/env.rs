@@ -140,7 +140,7 @@ impl Env {
 
 #[cfg(test)]
 mod tests {
-    use crate::interpreter::eval;
+    use crate::evaluator::eval;
 
     use super::*;
 

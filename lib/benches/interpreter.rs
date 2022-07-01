@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use huckleberry_lib::{env::Env, interpreter::eval_exprs, parser::parse};
+use huckleberry_lib::{env::Env, evaluator::eval_exprs, parser::parse};
 
 fn fibonacci_recursion(c: &mut Criterion) {
     let env = Env::with_core_module().into_ref();

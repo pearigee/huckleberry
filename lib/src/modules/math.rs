@@ -2,7 +2,7 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr},
-    interpreter::resolve_args,
+    evaluator::resolve_args,
     modules::utils::check_num,
 };
 
@@ -33,7 +33,7 @@ pub fn math_module() -> Env {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{env::Env, interpreter::eval, modules::math::math_module};
+    use crate::{env::Env, evaluator::eval, modules::math::math_module};
 
     #[test]
     fn test_add_op() {
