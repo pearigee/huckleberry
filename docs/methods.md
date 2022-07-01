@@ -1,6 +1,12 @@
 # Methods in Huckleberry
 
-# Example
+## Creation
+Methods in Huckleberry are similar to multimethods in other languages.
+To create one, use the function `method`.
+```clojure
+(defmethod target args & implementation)
+```
+## Examples
 ```clojure
 ;; Defining a method for numbers.
 (defmethod Number [to: do:]
@@ -11,26 +17,6 @@
 $(1 to: 5 do: (fn [i] (print i))) ;; Prints "1234"
 ```
 
-# Creation
-Methods in Huckleberry are similar to multimethods in other languages.
-To create one, use the function `method`.
-```clojure
-(defmethod target args & implementation)
-```
-
-## Method resolution by target
-The `target` can be a class or function. Depending on the target, method resolution is preformed differently:
-
-| Target | Can be overwritten? | Resolution |
-| ------ | ------- | ---------- |
-| class  | **Yes**, will overwrite previous method | Via map lookup |
-| function | **No**, will be appened to evaluation list | First passing method wins |
-
-**Class** methods are stored in a map with a tuple key. The tuple is the class followed by the argument names. Defining another methods for the class with the same argument names will overwrite any previous values. Method resolution is fast.
-
-**Function** methods are resolved by evaluating `target` on `self` until one returns a truthy value. As a result, _be careful that the resoltion functions are small, pure, and lightweight_. When a function method is resolved, the winning method is moved to the front of the evaluation list. Overtime this meands that the most commonly used functions are bubbled up to the top reducing resolution time.
-
-## Example in code
 ```clojure
 ;; Creates an constructor with the defaults provided.
 ;; The map returned will set its type metadata to "Person".
