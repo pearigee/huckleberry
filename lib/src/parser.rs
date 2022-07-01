@@ -65,6 +65,10 @@ impl Parser {
                 self.advance();
                 Ok(Expr::symbol(&value))
             }
+            TokenType::Ampersand => {
+                self.advance();
+                Ok(Expr::ampersand())
+            }
             TokenType::Nil => {
                 self.advance();
                 Ok(Expr::nil())
@@ -188,11 +192,16 @@ mod tests {
 
     #[test]
     fn test_parses_vector() {
-        let result = parse("[1 true nil]").unwrap();
+        let result = parse("[1 true & nil]").unwrap();
 
         assert_eq!(
             result[0],
-            Expr::vector(&[Expr::number(1.), Expr::boolean(true), Expr::nil()])
+            Expr::vector(&[
+                Expr::number(1.),
+                Expr::boolean(true),
+                Expr::Ampersand,
+                Expr::nil()
+            ])
         );
     }
 

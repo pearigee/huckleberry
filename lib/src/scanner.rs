@@ -13,6 +13,7 @@ pub enum TokenType {
     Symbol(String),
     Keyword(String),
     Boolean(bool),
+    Ampersand,
     Nil,
     EndOfFile,
 }
@@ -73,6 +74,7 @@ impl Scanner {
             Some('}') => self.add_token(TokenType::RightCurly),
             Some('[') => self.add_token(TokenType::LeftSquare),
             Some(']') => self.add_token(TokenType::RightSquare),
+            Some('&') => self.add_token(TokenType::Ampersand),
             Some('"') => self.string()?,
             Some(':') => self.keyword(),
             Some(' ') | Some('\r') | Some('\t') => (),
@@ -319,7 +321,14 @@ mod tests {
     fn test_tokenizes_nil() {
         let result = scan("nil").unwrap();
 
-        assert_eq!(result[0].token_type, TokenType::Nil,);
+        assert_eq!(result[0].token_type, TokenType::Nil);
+    }
+
+    #[test]
+    fn test_tokenizes_ampersand() {
+        let result = scan("&").unwrap();
+
+        assert_eq!(result[0].token_type, TokenType::Ampersand);
     }
 
     #[test]

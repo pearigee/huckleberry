@@ -36,6 +36,7 @@ pub enum Expr {
     Map(BTreeMap<Expr, Expr>),
     NativeFn(NativeFn),
     Fn(Fn),
+    Ampersand,
     Nil,
 }
 
@@ -66,6 +67,10 @@ impl Expr {
 
     pub fn list(exprs: &[Expr]) -> Expr {
         Expr::List(exprs.to_vec())
+    }
+
+    pub fn ampersand() -> Expr {
+        Expr::Ampersand
     }
 
     pub fn nil() -> Expr {
