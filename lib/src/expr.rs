@@ -27,6 +27,7 @@ pub struct Fn {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Expr {
     List(Vec<Expr>),
+    MethodList(Vec<Expr>),
     Number(OrderedFloat<f64>),
     Boolean(bool),
     String(String),
@@ -67,6 +68,10 @@ impl Expr {
 
     pub fn list(exprs: &[Expr]) -> Expr {
         Expr::List(exprs.to_vec())
+    }
+
+    pub fn method_list(exprs: &[Expr]) -> Expr {
+        Expr::MethodList(exprs.to_vec())
     }
 
     pub fn ampersand() -> Expr {

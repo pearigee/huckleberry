@@ -41,6 +41,9 @@ impl Parser {
             TokenType::LeftParen => Ok(Expr::List(
                 self.parse_vector(TokenType::LeftParen, TokenType::RightParen)?,
             )),
+            TokenType::LeftAngle => Ok(Expr::MethodList(
+                self.parse_vector(TokenType::LeftAngle, TokenType::RightAngle)?,
+            )),
             TokenType::LeftSquare => Ok(Expr::Vector(
                 self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare)?,
             )),
@@ -178,14 +181,28 @@ mod tests {
 
     #[test]
     fn test_parses_nested_expression() {
-        let result = parse("(+ 1.25 (/ 3 4))").unwrap();
+        let result = parse("(+ 1.25 <1 * 2>)").unwrap();
 
         assert_eq!(
             result[0],
             Expr::list(&[
                 Expr::symbol("+"),
                 Expr::number(1.25),
-                Expr::list(&[Expr::symbol("/"), Expr::number(3.), Expr::number(4.)])
+                Expr::method_list(&[Expr::number(1.), Expr::symbol("*"), Expr::number(2.)])
+            ])
+        );
+    }
+
+    #[test]
+    fn test_parses_method_list() {
+        let result = parse("<1 + 2>").unwrap();
+
+        assert_eq!(
+            result[0],
+            Expr::method_list(&[
+                Expr::number(1.),
+                Expr::symbol("+"),
+                Expr::number(2.)
             ])
         );
     }

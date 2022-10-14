@@ -39,10 +39,10 @@ macro_rules! generic_operator {
 pub fn logic_module() -> Env {
     let mut env = Env::new();
 
-    env.def("<", num_operator!("<", <));
-    env.def("<=", num_operator!("<=", <=));
-    env.def(">", num_operator!(">", >));
-    env.def(">=", num_operator!(">=", >=));
+    env.def("lt", num_operator!("lt", <));
+    env.def("lte", num_operator!("lte", <=));
+    env.def("gt", num_operator!("gt", >));
+    env.def("gte", num_operator!("gte", >=));
 
     env.def("=", generic_operator!("=", ==));
     env.def("!=", generic_operator!("!=", !=));
@@ -129,11 +129,11 @@ mod tests {
         let env_ref = env.into_ref();
 
         assert_eq!(
-            eval("(< 1 2 3 4 5)", env_ref.clone_ref()),
+            eval("(lt 1 2 3 4 5)", env_ref.clone_ref()),
             Ok(Expr::boolean(true))
         );
         assert_eq!(
-            eval("(< 5 4)", env_ref.clone_ref()),
+            eval("(lt 5 4)", env_ref.clone_ref()),
             Ok(Expr::boolean(false))
         );
     }
@@ -145,15 +145,15 @@ mod tests {
         let env_ref = env.into_ref();
 
         assert_eq!(
-            eval("(<= 2 2)", env_ref.clone_ref()),
+            eval("(lte 2 2)", env_ref.clone_ref()),
             Ok(Expr::boolean(true))
         );
         assert_eq!(
-            eval("(<= 2 3)", env_ref.clone_ref()),
+            eval("(lte 2 3)", env_ref.clone_ref()),
             Ok(Expr::boolean(true))
         );
         assert_eq!(
-            eval("(< 5 4)", env_ref.clone_ref()),
+            eval("(lte 5 4)", env_ref.clone_ref()),
             Ok(Expr::boolean(false))
         );
     }
@@ -165,11 +165,11 @@ mod tests {
         let env_ref = env.into_ref();
 
         assert_eq!(
-            eval("(> 5 4 3 2 1)", env_ref.clone_ref()),
+            eval("(gt 5 4 3 2 1)", env_ref.clone_ref()),
             Ok(Expr::boolean(true))
         );
         assert_eq!(
-            eval("(> 4 5)", env_ref.clone_ref()),
+            eval("(gt 4 5)", env_ref.clone_ref()),
             Ok(Expr::boolean(false))
         );
     }
@@ -181,15 +181,15 @@ mod tests {
         let env_ref = env.into_ref();
 
         assert_eq!(
-            eval("(>= 2 2)", env_ref.clone_ref()),
+            eval("(gte 2 2)", env_ref.clone_ref()),
             Ok(Expr::boolean(true))
         );
         assert_eq!(
-            eval("(>= 3 2)", env_ref.clone_ref()),
+            eval("(gte 3 2)", env_ref.clone_ref()),
             Ok(Expr::boolean(true))
         );
         assert_eq!(
-            eval("(>= 4 5)", env_ref.clone_ref()),
+            eval("(gte 4 5)", env_ref.clone_ref()),
             Ok(Expr::boolean(false))
         );
     }

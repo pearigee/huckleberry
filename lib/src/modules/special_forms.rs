@@ -136,11 +136,11 @@ mod tests {
         let env = Env::with_core_module().into_ref();
 
         assert_eq!(
-            eval("(if (< 1 2) 1 2)", env.clone_ref()),
+            eval("(if (lt 1 2) 1 2)", env.clone_ref()),
             Ok(Expr::number(1.))
         );
         assert_eq!(
-            eval("(if (> 1 2) 1 2)", env.clone_ref()),
+            eval("(if (gt 1 2) 1 2)", env.clone_ref()),
             Ok(Expr::number(2.))
         );
         assert_eq!(

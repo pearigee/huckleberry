@@ -8,6 +8,8 @@ pub enum TokenType {
     RightCurly,
     LeftSquare,
     RightSquare,
+    LeftAngle,
+    RightAngle,
     String(String),
     Number(f64),
     Symbol(String),
@@ -70,6 +72,8 @@ impl Scanner {
         match c {
             Some('(') => self.add_token(TokenType::LeftParen),
             Some(')') => self.add_token(TokenType::RightParen),
+            Some('<') => self.add_token(TokenType::LeftAngle),
+            Some('>') => self.add_token(TokenType::RightAngle),
             Some('{') => self.add_token(TokenType::LeftCurly),
             Some('}') => self.add_token(TokenType::RightCurly),
             Some('[') => self.add_token(TokenType::LeftSquare),
@@ -220,8 +224,6 @@ impl Scanner {
                     || value == '+'
                     || value == '!'
                     || value == '?'
-                    || value == '<'
-                    || value == '>'
                     || value == '/'
                     || value == '='
             }
@@ -332,6 +334,14 @@ mod tests {
     }
 
     #[test]
+    fn test_tokenizes_angle_brackets() {
+        let result = scan("<>").unwrap();
+
+        assert_eq!(result[0].token_type, TokenType::LeftAngle);
+        assert_eq!(result[1].token_type, TokenType::RightAngle);
+    }
+
+    #[test]
     fn test_tokenizes_strings() {
         let result = scan("\"Test string 1\" \"Test\nstring 2\"").unwrap();
 
@@ -356,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_symbols() {
-        let input = "+ - / * <= >= = ? ! is_symbol? set! hello";
+        let input = "+ - / * = ? ! is_symbol? set! hello";
         let tokens = scan(input).unwrap();
         let names = input.split(' ').collect::<Vec<&str>>();
 
