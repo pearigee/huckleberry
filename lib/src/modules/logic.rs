@@ -1,8 +1,8 @@
 use crate::{
     env::{Env, EnvRef},
     error::HError,
-    expr::{Arity, Expr},
     evaluator::resolve_args,
+    expr::{Arity, Expr},
     modules::utils::check_num,
 };
 

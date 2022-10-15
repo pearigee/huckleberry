@@ -178,6 +178,10 @@ impl Scanner {
         while Scanner::is_alpha_numeric(self.peek()) {
             self.advance();
         }
+        // Allow symbols to end in optional : for method arguments.
+        if self.peek() == Some(':') {
+            self.advance();
+        }
 
         let result = self.source[self.start..self.current].to_string();
 
@@ -188,9 +192,12 @@ impl Scanner {
         } else if result == "nil" {
             self.add_token(TokenType::Nil)
         } else {
-            self.add_token(TokenType::Symbol(
-                self.source[self.start..self.current].to_string(),
-            ))
+            // Purge optional : to simplify argument handling.
+            self.add_token(TokenType::Symbol(if result.ends_with(":") {
+                self.source[self.start..self.current - 1].to_string()
+            } else {
+                self.source[self.start..self.current].to_string()
+            }))
         }
     }
 
@@ -376,6 +383,14 @@ mod tests {
                 TokenType::Symbol(names[i].to_string())
             )
         }
+    }
+
+    #[test]
+    fn test_tokenizes_method_args() {
+        let input = "hello:";
+        let tokens = scan(input).unwrap();
+
+        assert_eq!(tokens[0].token_type, TokenType::Symbol("hello".to_string()));
     }
 
     #[test]

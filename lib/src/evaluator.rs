@@ -3,11 +3,12 @@ use std::collections::BTreeMap;
 use crate::{
     env::{Env, EnvRef},
     error::HError,
-    expr::{Arity, Expr, Fn, NativeFn},
+    expr::{Arity, Expr, Fn, Method, NativeFn},
+    modules::utils::is_truthy,
     parser::parse,
 };
 
-trait Callable {
+pub trait Callable {
     fn call(&self, args: &[Expr], env: EnvRef) -> Result<Expr, HError>;
     fn arity(&self) -> &Arity;
 }
@@ -84,6 +85,35 @@ pub fn resolve_args(args: &[Expr], env: EnvRef) -> Result<Vec<Expr>, HError> {
         result.push(eval_expr(expr, env.clone_ref())?);
     }
     Ok(result)
+}
+
+pub fn get_first_method_matching(
+    id: &str,
+    this: &Expr,
+    env: EnvRef,
+) -> Result<Option<Method>, HError> {
+    let methods = env.get_methods(id)?;
+    for m in methods {
+        match &*m.selector {
+            Expr::NativeFn(fun) => {
+                if is_truthy(&fun.call(&[this.clone()], env.clone_ref())?) {
+                    return Ok(Some(m.clone()));
+                }
+            }
+            Expr::Fn(fun) => {
+                if is_truthy(&fun.call(&[this.clone()], env.clone_ref())?) {
+                    return Ok(Some(m.clone()));
+                }
+            }
+            expr => {
+                if is_truthy(&expr) {
+                    return Ok(Some(m.clone()));
+                }
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 impl Callable for NativeFn {

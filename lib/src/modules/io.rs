@@ -1,8 +1,8 @@
 use crate::{
     env::{Env, EnvRef},
     error::HError,
-    expr::{Arity, Expr},
     evaluator::resolve_args,
+    expr::{Arity, Expr},
 };
 
 fn print_resolved_exprs(exprs: &[Expr], env: EnvRef) -> Result<Expr, HError> {

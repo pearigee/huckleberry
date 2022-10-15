@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::BTreeMap, rc::Rc};
 
 use crate::{
     error::HError,
-    expr::{Arity, Expr},
+    expr::{Arity, Expr, Method},
     modules::core_module,
 };
 
@@ -10,6 +10,7 @@ pub struct EnvRef(Rc<RefCell<Option<Env>>>);
 
 pub struct Env {
     vars: BTreeMap<String, Expr>,
+    methods: BTreeMap<String, Vec<Method>>,
     enclosing: EnvRef,
 }
 
@@ -42,6 +43,14 @@ impl EnvRef {
             .get(id)
     }
 
+    pub fn get_methods(&self, id: &str) -> Result<Vec<Method>, HError> {
+        self.0
+            .borrow()
+            .as_ref()
+            .ok_or_else(|| HError::EnvironmentNotFound)?
+            .get_methods(id)
+    }
+
     pub fn set(&self, key: &str, value: Expr) -> Result<Expr, HError> {
         self.0
             .borrow_mut()
@@ -59,7 +68,7 @@ impl EnvRef {
     }
 
     pub fn defn(
-        &mut self,
+        &self,
         name: &str,
         arity: Arity,
         fun: fn(args: &[Expr], env: EnvRef) -> Result<Expr, HError>,
@@ -70,12 +79,21 @@ impl EnvRef {
             .expect("Environment not found")
             .defn(name, arity, fun);
     }
+
+    pub fn defm(&self, name: &str, method: Method) {
+        self.0
+            .borrow_mut()
+            .as_mut()
+            .expect("Environment not found")
+            .defm(name, method);
+    }
 }
 
 impl Env {
     pub fn new() -> Env {
         Env {
             vars: BTreeMap::new(),
+            methods: BTreeMap::new(),
             enclosing: EnvRef::nil(),
         }
     }
@@ -89,6 +107,7 @@ impl Env {
     pub fn extend(env_ref: EnvRef) -> Env {
         Env {
             vars: BTreeMap::new(),
+            methods: BTreeMap::new(),
             enclosing: env_ref,
         }
     }
@@ -106,6 +125,13 @@ impl Env {
         self.def(name, Expr::native_fn(name, arity, fun));
     }
 
+    pub fn defm(&mut self, name: &str, method: Method) {
+        self.methods
+            .entry(name.to_string())
+            .or_insert_with(Vec::new)
+            .push(method);
+    }
+
     pub fn merge(&mut self, env: Env) {
         self.vars.extend(env.vars.clone())
     }
@@ -118,6 +144,17 @@ impl Env {
         match result {
             Some(value) => Ok(value.to_owned()),
             _ => Err(HError::UnboundVar(key.to_string())),
+        }
+    }
+
+    pub fn get_methods(&self, key: &str) -> Result<Vec<Method>, HError> {
+        let result = self.methods.get(key);
+        if result.is_none() && self.enclosing.is_some() {
+            return self.enclosing.get_methods(key);
+        }
+        match result {
+            Some(value) => Ok(value.to_owned()),
+            _ => Err(HError::UnboundMethod(key.to_string())),
         }
     }
 

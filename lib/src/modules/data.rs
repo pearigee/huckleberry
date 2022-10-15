@@ -1,8 +1,8 @@
 use crate::{
     env::{Env, EnvRef},
     error::HError,
-    expr::{Arity, Expr},
     evaluator::resolve_args,
+    expr::{Arity, Expr},
 };
 
 pub fn data_module() -> Env {

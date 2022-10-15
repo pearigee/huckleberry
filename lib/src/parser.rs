@@ -199,11 +199,7 @@ mod tests {
 
         assert_eq!(
             result[0],
-            Expr::method_list(&[
-                Expr::number(1.),
-                Expr::symbol("+"),
-                Expr::number(2.)
-            ])
+            Expr::method_list(&[Expr::number(1.), Expr::symbol("+"), Expr::number(2.)])
         );
     }
 

@@ -3,6 +3,7 @@ use crate::expr::{Arity, Expr};
 #[derive(Debug, PartialEq, Clone)]
 pub enum HError {
     UnboundVar(String),
+    UnboundMethod(String),
     UnexpectedForm(String, Expr),
     NotAFunction(String),
     InvalidEmptyList(String),
