@@ -5,7 +5,7 @@ use crate::{
     expr::{Arity, Expr, Fn, Method},
 };
 
-use super::utils::is_truthy;
+use super::utils::{is_truthy, method_args, method_id};
 
 pub fn special_forms_module() -> Env {
     let mut env = Env::new();
@@ -136,25 +136,14 @@ pub fn special_forms_module() -> Env {
                 ));
             }
 
-            let id: Vec<&Expr> = raw_args.iter().step_by(2).collect();
-            let filtered_args: Vec<Expr> = raw_args
-                .iter()
-                .skip(1)
-                .step_by(2)
-                .map(|a| a.clone())
-                .collect();
+            let name = method_id(raw_args);
+            let filtered_args: Vec<Expr> = method_args(raw_args);
             let arity = Arity::Count(filtered_args.len());
 
             let mut code: &[Expr] = &[Expr::Nil];
             if args.len() > 2 {
                 code = &args[2..];
             }
-
-            let name = id
-                .iter()
-                .map(|e| format!("{}", e))
-                .collect::<Vec<_>>()
-                .join(" ");
             env.defm(
                 &name,
                 Method {

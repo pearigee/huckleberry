@@ -13,3 +13,21 @@ pub fn is_truthy(expr: &Expr) -> bool {
         _ => true,
     }
 }
+
+pub fn method_id(args: &[Expr]) -> String {
+    let id: Vec<&Expr> = args.iter().step_by(2).collect();
+
+    id
+        .iter()
+        .map(|e| format!("{}", e))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+pub fn method_args(args: &[Expr]) -> Vec<Expr> {
+    args.iter()
+        .skip(1)
+        .step_by(2)
+        .map(|a| a.clone())
+        .collect()
+}

@@ -6,6 +6,7 @@ pub enum HError {
     UnboundMethod(String),
     UnexpectedForm(String, Expr),
     NotAFunction(String),
+    NotAMethod(String),
     InvalidEmptyList(String),
     SetUninitializedVar(String),
     InvalidArity(String, Arity),
