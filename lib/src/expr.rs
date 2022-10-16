@@ -142,6 +142,24 @@ impl std::fmt::Display for Expr {
             Expr::Symbol(value) => write!(f, "{}", value),
             Expr::Keyword(value) => write!(f, "{}", value),
             Expr::String(value) => write!(f, "{}", value),
+            Expr::Vector(value) => write!(
+                f,
+                "[{}]",
+                value
+                    .iter()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            ),
+            Expr::Map(value) => write!(
+                f,
+                "{{{}}}",
+                value
+                    .iter()
+                    .map(|(k, v)| format!("{} {}", k.to_string(), v.to_string()))
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            ),
             Expr::Nil => write!(f, "nil"),
             val => write!(f, "{:?}", val),
         }
