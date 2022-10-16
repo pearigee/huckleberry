@@ -11,7 +11,7 @@ pub fn special_forms_module() -> Env {
     let mut env = Env::new();
 
     env.defn(
-        "def",
+        "var",
         Arity::Range(1, 2),
         |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             match &args[0] {
@@ -264,7 +264,7 @@ mod tests {
     fn test_def() {
         let env = Env::with_core_module().into_ref();
 
-        let result = eval("(def a 2) (+ a 1)", env);
+        let result = eval("(var a 2) (+ a 1)", env);
 
         assert_eq!(result, Ok(Expr::number(3.)));
     }
@@ -273,7 +273,7 @@ mod tests {
     fn test_def_overwrite() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def a 2) (def a (+ a 1))", env.clone_ref()).unwrap();
+        eval("(var a 2) (var a (+ a 1))", env.clone_ref()).unwrap();
 
         assert_eq!(env.get("a"), Ok(Expr::number(3.)));
     }
@@ -305,7 +305,7 @@ mod tests {
     fn test_set() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def a 2) (set! a 1) a", env.clone_ref()).unwrap();
+        eval("(var a 2) (set! a 1) a", env.clone_ref()).unwrap();
 
         assert_eq!(env.get("a"), Ok(Expr::number(1.)));
     }
@@ -323,7 +323,7 @@ mod tests {
     fn test_creates_lambdas() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
+        eval("(var f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
         assert_eq!(eval("(f 1 2)", env.clone_ref()), Ok(Expr::number(3.)));
     }
@@ -332,7 +332,7 @@ mod tests {
     fn test_creates_variadic_lambdas() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def f (fn [a &b] (println a b)))", env.clone_ref()).unwrap();
+        eval("(var f (fn [a &b] (println a b)))", env.clone_ref()).unwrap();
 
         match env.get("f").unwrap() {
             Expr::Fn(f) => {
@@ -341,7 +341,7 @@ mod tests {
             _ => panic!("Expected a function"),
         }
 
-        eval("(def f (fn [a b &c] (println a b)))", env.clone_ref()).unwrap();
+        eval("(var f (fn [a b &c] (println a b)))", env.clone_ref()).unwrap();
 
         match env.get("f").unwrap() {
             Expr::Fn(f) => {
@@ -350,7 +350,7 @@ mod tests {
             _ => panic!("Expected a function"),
         }
 
-        eval("(def f (fn [&c] (println a b)))", env.clone_ref()).unwrap();
+        eval("(var f (fn [&c] (println a b)))", env.clone_ref()).unwrap();
 
         match env.get("f").unwrap() {
             Expr::Fn(f) => {
@@ -364,7 +364,7 @@ mod tests {
     fn test_empty_lambda_returns_nil() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def f (fn []))", env.clone_ref()).unwrap();
+        eval("(var f (fn []))", env.clone_ref()).unwrap();
 
         assert_eq!(eval("(f)", env.clone_ref()), Ok(Expr::Nil));
     }

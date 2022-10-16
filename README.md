@@ -77,8 +77,8 @@ For example, here is an example with `defn` and `fn`:
 ### Equality
 Unlike other languages, equality is computed by value (not by reference). For example:
 ```clojure
-(def bob {:name "Bob" :age 22})
-(def bob-twin {:name "Bob" :age 22})
+(var bob {:name "Bob" :age 22})
+(var bob-twin {:name "Bob" :age 22})
 
 ;; S-expression form
 (println (= bob bob-twin)) ;; Prints true

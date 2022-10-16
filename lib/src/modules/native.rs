@@ -418,7 +418,7 @@ mod tests {
         let env = Env::with_core_module().into_ref();
         eval(
             "
-            (def a 1)
+            (var a 1)
             (for-each i <1 to: 6>
                 (set! a (+ a i)))",
             env.clone_ref(),

@@ -221,7 +221,7 @@ mod tests {
     fn test_calls_fn() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
+        eval("(var f (fn [a b] (+ a b)))", env.clone_ref()).unwrap();
 
         assert_eq!(eval("(f 1 2)", env.clone_ref()), Ok(Expr::number(3.)));
     }
@@ -279,7 +279,7 @@ mod tests {
     fn test_calls_variadic_fn() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(def f (fn [a &b] [a b]))", env.clone_ref()).unwrap();
+        eval("(var f (fn [a &b] [a b]))", env.clone_ref()).unwrap();
 
         assert_eq!(
             eval("(f 1 2 3 4)", env.clone_ref()),
@@ -289,7 +289,7 @@ mod tests {
             ]))
         );
 
-        eval("(def f (fn [&a] a))", env.clone_ref()).unwrap();
+        eval("(var f (fn [&a] a))", env.clone_ref()).unwrap();
 
         assert_eq!(
             eval("(f 1 2 3 4)", env.clone_ref()),
@@ -307,8 +307,8 @@ mod tests {
         let env = Env::with_core_module().into_ref();
 
         assert_eq!(
-            eval("(def a 3 4)", env.clone_ref()),
-            Err(HError::InvalidArity("def".to_string(), Arity::Range(1, 2)))
+            eval("(var a 3 4)", env.clone_ref()),
+            Err(HError::InvalidArity("var".to_string(), Arity::Range(1, 2)))
         );
 
         assert_eq!(
