@@ -142,6 +142,7 @@ impl std::fmt::Display for Expr {
             Expr::Symbol(value) => write!(f, "{}", value),
             Expr::Keyword(value) => write!(f, "{}", value),
             Expr::String(value) => write!(f, "{}", value),
+            Expr::Boolean(value) => write!(f, "{}", value),
             Expr::Vector(value) => write!(
                 f,
                 "[{}]",
