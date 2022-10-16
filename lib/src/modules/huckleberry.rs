@@ -1,5 +1,9 @@
 use crate::{env::EnvRef, evaluator::eval};
 
+const CODE: &str = "
+(defm number? [to: max] (range this max))
+";
+
 pub fn add_eval_definitions(env: EnvRef) {
-    eval("(defm number? [to: max] (range this max))", env.clone_ref()).unwrap();
+    eval(CODE, env.clone_ref()).unwrap();
 }
