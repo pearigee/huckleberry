@@ -291,7 +291,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "huckleberry_cli"
+name = "huck"
 version = "0.1.0"
 dependencies = [
  "huckleberry_lib",
