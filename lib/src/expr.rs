@@ -24,9 +24,19 @@ pub struct Fn {
     pub closure: EnvRef,
 }
 
+pub struct Method {
+    pub id: String,
+    pub selector: Box<Expr>,
+    pub arity: Arity,
+    pub args: Vec<Expr>,
+    pub function: Vec<Expr>,
+    pub closure: EnvRef,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Expr {
     List(Vec<Expr>),
+    MethodList(Vec<Expr>),
     Number(OrderedFloat<f64>),
     Boolean(bool),
     String(String),
@@ -36,6 +46,7 @@ pub enum Expr {
     Map(BTreeMap<Expr, Expr>),
     NativeFn(NativeFn),
     Fn(Fn),
+    Method(Method),
     Ampersand,
     Nil,
 }
@@ -67,6 +78,10 @@ impl Expr {
 
     pub fn list(exprs: &[Expr]) -> Expr {
         Expr::List(exprs.to_vec())
+    }
+
+    pub fn method_list(exprs: &[Expr]) -> Expr {
+        Expr::MethodList(exprs.to_vec())
     }
 
     pub fn ampersand() -> Expr {
@@ -201,6 +216,45 @@ impl Clone for Fn {
     fn clone(&self) -> Self {
         Fn {
             id: self.id.to_string(),
+            args: self.args.clone(),
+            arity: self.arity.to_owned(),
+            closure: self.closure.clone_ref(),
+            function: self.function.clone(),
+        }
+    }
+}
+
+impl PartialEq for Method {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl Eq for Method {}
+
+impl Ord for Method {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for Method {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.id.cmp(&other.id))
+    }
+}
+
+impl std::fmt::Debug for Method {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Method").field("id", &self.id).finish()
+    }
+}
+
+impl Clone for Method {
+    fn clone(&self) -> Self {
+        Method {
+            id: self.id.to_string(),
+            selector: self.selector.clone(),
             args: self.args.clone(),
             arity: self.arity.to_owned(),
             closure: self.closure.clone_ref(),

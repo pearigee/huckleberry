@@ -8,6 +8,8 @@ pub enum TokenType {
     RightCurly,
     LeftSquare,
     RightSquare,
+    LeftAngle,
+    RightAngle,
     String(String),
     Number(f64),
     Symbol(String),
@@ -70,6 +72,8 @@ impl Scanner {
         match c {
             Some('(') => self.add_token(TokenType::LeftParen),
             Some(')') => self.add_token(TokenType::RightParen),
+            Some('<') => self.add_token(TokenType::LeftAngle),
+            Some('>') => self.add_token(TokenType::RightAngle),
             Some('{') => self.add_token(TokenType::LeftCurly),
             Some('}') => self.add_token(TokenType::RightCurly),
             Some('[') => self.add_token(TokenType::LeftSquare),
@@ -174,6 +178,10 @@ impl Scanner {
         while Scanner::is_alpha_numeric(self.peek()) {
             self.advance();
         }
+        // Allow symbols to end in optional : for method arguments.
+        if self.peek() == Some(':') {
+            self.advance();
+        }
 
         let result = self.source[self.start..self.current].to_string();
 
@@ -184,9 +192,12 @@ impl Scanner {
         } else if result == "nil" {
             self.add_token(TokenType::Nil)
         } else {
-            self.add_token(TokenType::Symbol(
-                self.source[self.start..self.current].to_string(),
-            ))
+            // Purge optional : to simplify argument handling.
+            self.add_token(TokenType::Symbol(if result.ends_with(":") {
+                self.source[self.start..self.current - 1].to_string()
+            } else {
+                self.source[self.start..self.current].to_string()
+            }))
         }
     }
 
@@ -220,8 +231,6 @@ impl Scanner {
                     || value == '+'
                     || value == '!'
                     || value == '?'
-                    || value == '<'
-                    || value == '>'
                     || value == '/'
                     || value == '='
             }
@@ -332,6 +341,14 @@ mod tests {
     }
 
     #[test]
+    fn test_tokenizes_angle_brackets() {
+        let result = scan("<>").unwrap();
+
+        assert_eq!(result[0].token_type, TokenType::LeftAngle);
+        assert_eq!(result[1].token_type, TokenType::RightAngle);
+    }
+
+    #[test]
     fn test_tokenizes_strings() {
         let result = scan("\"Test string 1\" \"Test\nstring 2\"").unwrap();
 
@@ -356,7 +373,7 @@ mod tests {
 
     #[test]
     fn test_tokenizes_symbols() {
-        let input = "+ - / * <= >= = ? ! is_symbol? set! hello";
+        let input = "+ - / * = ? ! is_symbol? set! hello";
         let tokens = scan(input).unwrap();
         let names = input.split(' ').collect::<Vec<&str>>();
 
@@ -366,6 +383,14 @@ mod tests {
                 TokenType::Symbol(names[i].to_string())
             )
         }
+    }
+
+    #[test]
+    fn test_tokenizes_method_args() {
+        let input = "hello:";
+        let tokens = scan(input).unwrap();
+
+        assert_eq!(tokens[0].token_type, TokenType::Symbol("hello".to_string()));
     }
 
     #[test]
