@@ -14,7 +14,10 @@ fn main() -> Result<()> {
                     println!("{}", expr);
                     rl.add_history_entry(line);
                 }
-                Err(err) => println!("{:?}", err),
+                Err(err) => {
+                    println!("{:?}", err);
+                    rl.add_history_entry(line);
+                }
             },
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
