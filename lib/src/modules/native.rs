@@ -77,7 +77,7 @@ pub fn native_module() -> Env {
                 },
                 Expr::Vector(vec) => {
                     let index = match &resolved[1] {
-                        Expr::Number(value) => ((**value) as usize),
+                        Expr::Number(value) => (**value) as usize,
                         invalid => {
                             return Err(HError::UnexpectedForm(
                                 "Invalid vector index".to_string(),
