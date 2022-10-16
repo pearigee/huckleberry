@@ -68,7 +68,7 @@ For example, here is an example with `defn` and `fn`:
     (def a 0)
     (def b 1)
     <0 to: n 
-       do: (fn [i] (def c (+ a b))
+       do: (fn [_] (def c (+ a b))
                    (set! a b)
                    (set! b c))>
     a)
