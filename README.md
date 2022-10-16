@@ -19,7 +19,7 @@ The same can be done with method expressions:
 As you can see, method expressions are wrapped in angle brackets rather than parens. The two can forms can be combined at will. Notice the lambda function in the second example.
 
 ### Method creation
-Methods new methods can be created like so:
+New methods can be created like so:
 ```clojure
 (defm number? [to: max do: f] 
     (for-each i (range this max) (f i)))
@@ -30,7 +30,7 @@ Let's take this appart. `defm` is a special form that enables new methods to be 
 ```
 Let's break this down further:
  - **SELECTOR**: A selector is a function used to determine if an object is eligible to execute this method. In the example above, we pass the `number?` function which returns `true` when passed a number. This means any number can call this method. Learn more about method dispatch below.
- - **NAME**: The vector `[to: max do: f]` defines a method called `to do`. `max` and `f` are the variables the arguments will populate when called.
+ - **NAME**: The vector `[to: max do: f]` defines a method named `to do`. `max` and `f` are the variables the arguments will populate when called.
  - **IMPLEMENTATION**: This the body of the method.
 
 
@@ -41,7 +41,7 @@ When a method is called, Huckleberry steps through the `Method` vector executing
 
 If no method selectors return a truthy value than a "no method found" error is thrown.
 
-Let's look at a example:
+Let's look at an example:
 ```clojure
 (defm (fn [n] <n less-than: 18>)
       [is-under-18?]
