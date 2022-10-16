@@ -8,6 +8,11 @@ const CODE: &str = "
 (defm number? [greater-than: n] (gt this n))
 (defm number? [greater-than-eq: n] (gte this n))
 (defm true [=: e] (= this e))
+(defm true [!=: e] (!= this e))
+(defm number? [+: n] (+ this n))
+(defm number? [-: n] (- this n))
+(defm number? [/: n] (/ this n))
+(defm number? [*: n] (* this n))
 ";
 
 pub fn add_eval_definitions(env: EnvRef) {
@@ -65,7 +70,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eq() {
+    fn test_eq_methods() {
         let env = Env::with_core_module().into_ref();
 
         assert_eq!(
@@ -77,6 +82,26 @@ mod tests {
             eval("<[1 2 3] = [1 3 2]>", env.clone_ref()).unwrap(),
             Expr::boolean(false)
         );
+
+        assert_eq!(
+            eval("<[1 2 3] != [1 2 3]>", env.clone_ref()).unwrap(),
+            Expr::boolean(false)
+        );
+
+        assert_eq!(
+            eval("<[1 2 3] != [1 3 2]>", env.clone_ref()).unwrap(),
+            Expr::boolean(true)
+        );
+    }
+
+    #[test]
+    fn test_math_methods() {
+        let env = Env::with_core_module().into_ref();
+
+        assert_eq!(eval("<1 + 2>", env.clone_ref()).unwrap(), Expr::number(3.));
+        assert_eq!(eval("<1 - 2>", env.clone_ref()).unwrap(), Expr::number(-1.));
+        assert_eq!(eval("<1 / 2>", env.clone_ref()).unwrap(), Expr::number(0.5));
+        assert_eq!(eval("<1 * 2>", env.clone_ref()).unwrap(), Expr::number(2.));
     }
 
     #[test]
