@@ -108,7 +108,8 @@ pub fn get_first_method_matching(
     env: EnvRef,
 ) -> Result<Option<Method>, HError> {
     let methods = env.get_methods(id)?;
-    for m in methods {
+    // Evaluate selectors in reverse order to ensure the most recently defined method takes precedence.
+    for m in methods.iter().rev() {
         match &*m.selector {
             Expr::NativeFn(fun) => {
                 if is_truthy(&fun.call(&[this.clone()], env.clone_ref(), None)?) {
@@ -232,6 +233,21 @@ mod tests {
         eval("(defm true [+: n] (+ this n))", env.clone_ref()).unwrap();
 
         assert_eq!(eval("<1 + 2>", env.clone_ref()), Ok(Expr::number(3.)));
+    }
+
+    #[test]
+    fn test_calls_most_recent_method_definition() {
+        let env = Env::with_core_module().into_ref();
+
+        eval(
+            "
+            (defm number? [+: n] (+ this n))
+            (defm number? [+: n] (+ this n 2))",
+            env.clone_ref(),
+        )
+        .unwrap();
+
+        assert_eq!(eval("<1 + 2>", env.clone_ref()), Ok(Expr::number(5.)));
     }
 
     #[test]
