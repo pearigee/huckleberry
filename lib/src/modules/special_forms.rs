@@ -62,46 +62,28 @@ pub fn special_forms_module() -> Env {
     env.defn(
         "fn",
         Arity::Range(1, usize::MAX),
+        |args: &[Expr], env: EnvRef| function(args, env),
+    );
+
+    env.defn(
+        "defn",
+        Arity::Range(2, usize::MAX),
         |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
-            let fn_args = match &args[0] {
-                Expr::Vector(values) => values,
-                value => {
+            let name_expr = &args[0];
+            let name = match name_expr {
+                Expr::Symbol(value) => value,
+                invalid => {
                     return Err(HError::UnexpectedForm(
-                        "Expected an argument vector".to_string(),
-                        value.clone(),
+                        "\"defn\" requires a symbol for name".to_string(),
+                        invalid.clone(),
                     ))
                 }
             };
 
-            let mut arity = Arity::Count(fn_args.len());
-            for (i, arg) in fn_args.iter().enumerate() {
-                match arg {
-                    Expr::Ampersand => {
-                        arity = Arity::Range(i, usize::MAX);
-                        if fn_args.len() != i + 2 {
-                            return Err(HError::UnexpectedForm(
-                                "In fn declaration, & can only proceed one symbol".to_string(),
-                                arg.clone(),
-                            ));
-                        }
-                        break;
-                    }
-                    _ => (),
-                }
-            }
+            let fun_expr = function(&args[1..], env.clone_ref())?;
+            env.def(name, fun_expr);
 
-            let mut code: &[Expr] = &[Expr::Nil];
-            if args.len() > 1 {
-                code = &args[1..];
-            }
-
-            Ok(Expr::Fn(Fn {
-                id: format!("{:?}_{:?}", fn_args, code),
-                arity,
-                args: fn_args.clone(),
-                function: code.into(),
-                closure: env.clone_ref(),
-            }))
+            Ok(Expr::nil())
         },
     );
 
@@ -163,6 +145,48 @@ pub fn special_forms_module() -> Env {
     env
 }
 
+fn function(args: &[Expr], env: EnvRef) -> Result<Expr, HError> {
+    let fn_args = match &args[0] {
+        Expr::Vector(values) => values,
+        value => {
+            return Err(HError::UnexpectedForm(
+                "Expected an argument vector".to_string(),
+                value.clone(),
+            ))
+        }
+    };
+
+    let mut arity = Arity::Count(fn_args.len());
+    for (i, arg) in fn_args.iter().enumerate() {
+        match arg {
+            Expr::Ampersand => {
+                arity = Arity::Range(i, usize::MAX);
+                if fn_args.len() != i + 2 {
+                    return Err(HError::UnexpectedForm(
+                        "In fn declaration, & can only proceed one symbol".to_string(),
+                        arg.clone(),
+                    ));
+                }
+                break;
+            }
+            _ => (),
+        }
+    }
+
+    let mut code: &[Expr] = &[Expr::Nil];
+    if args.len() > 1 {
+        code = &args[1..];
+    }
+
+    Ok(Expr::Fn(Fn {
+        id: format!("{:?}_{:?}", fn_args, code),
+        arity,
+        args: fn_args.clone(),
+        function: code.into(),
+        closure: env.clone_ref(),
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,6 +232,32 @@ mod tests {
                 Expr::Symbol("num".to_string())
             ])]
         );
+    }
+
+    #[test]
+    fn test_defn() {
+        let env = Env::with_core_module().into_ref();
+
+        eval("(defn add [a b] (+ a b))", env.clone_ref()).unwrap();
+
+        match env.get("add").unwrap() {
+            Expr::Fn(fun) => {
+                assert_eq!(fun.arity, Arity::Count(2));
+                assert_eq!(
+                    fun.args,
+                    vec![Expr::Symbol("a".to_string()), Expr::Symbol("b".to_string())]
+                );
+                assert_eq!(
+                    fun.function,
+                    vec![Expr::list(&[
+                        Expr::Symbol("+".to_string()),
+                        Expr::Symbol("a".to_string()),
+                        Expr::Symbol("b".to_string())
+                    ])]
+                );
+            }
+            _ => panic!("Expected a function"),
+        }
     }
 
     #[test]
