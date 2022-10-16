@@ -43,6 +43,16 @@ impl EnvRef {
             .get(id)
     }
 
+    pub fn merge(&self, env: Env) -> Result<(), HError> {
+        self.0
+            .borrow_mut()
+            .as_mut()
+            .ok_or_else(|| HError::EnvironmentNotFound)?
+            .merge(env);
+
+        Ok(())
+    }
+
     pub fn get_methods(&self, id: &str) -> Result<Vec<Method>, HError> {
         self.0
             .borrow()
@@ -100,7 +110,7 @@ impl Env {
 
     pub fn with_core_module() -> Env {
         let mut env = Env::new();
-        env.merge(core_module());
+        env.merge_ref(core_module()).unwrap();
         env
     }
 
@@ -133,7 +143,28 @@ impl Env {
     }
 
     pub fn merge(&mut self, env: Env) {
-        self.vars.extend(env.vars.clone())
+        self.vars.extend(env.vars.clone());
+        self.methods.extend(env.methods.clone());
+    }
+
+    pub fn merge_ref(&mut self, env: EnvRef) -> Result<(), HError> {
+        self.vars.extend(
+            env.0
+                .borrow()
+                .as_ref()
+                .ok_or_else(|| HError::EnvironmentNotFound)?
+                .vars
+                .clone(),
+        );
+        self.methods.extend(
+            env.0
+                .borrow()
+                .as_ref()
+                .ok_or_else(|| HError::EnvironmentNotFound)?
+                .methods
+                .clone(),
+        );
+        Ok(())
     }
 
     pub fn get(&self, key: &str) -> Result<Expr, HError> {

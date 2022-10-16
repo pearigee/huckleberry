@@ -4,7 +4,7 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     expr::{Arity, Expr, Fn, Method, NativeFn},
-    modules::utils::{is_truthy, method_id, method_args},
+    modules::utils::{is_truthy, method_args, method_id},
     parser::parse,
 };
 
@@ -247,9 +247,16 @@ mod tests {
     fn test_calls_method_with_multiple_args() {
         let env = Env::with_core_module().into_ref();
 
-        eval("(defm true [add: a divide-by: b] (/ (+ this a) b))", env.clone_ref()).unwrap();
+        eval(
+            "(defm true [add: a divide-by: b] (/ (+ this a) b))",
+            env.clone_ref(),
+        )
+        .unwrap();
 
-        assert_eq!(eval("<7 add: 3 divide-by: 2>", env.clone_ref()), Ok(Expr::number(5.)));
+        assert_eq!(
+            eval("<7 add: 3 divide-by: 2>", env.clone_ref()),
+            Ok(Expr::number(5.))
+        );
     }
 
     #[test]

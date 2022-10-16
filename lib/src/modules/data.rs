@@ -41,6 +41,39 @@ pub fn data_module() -> Env {
         },
     );
 
+    env.defn(
+        "range",
+        Arity::Count(2),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let resolved = resolve_args(args, env)?;
+            match (&resolved[0], &resolved[1]) {
+                (Expr::Number(min), Expr::Number(max)) => {
+                    let min = **min as i64;
+                    let max = **max as i64;
+                    Ok(Expr::Vector(
+                        (min..max).map(|n| Expr::number(n as f64)).collect(),
+                    ))
+                }
+                (min, max) => Err(HError::UnexpectedForm(
+                    "Invalid range".to_string(),
+                    Expr::vector(&[min.clone(), max.clone()]),
+                )),
+            }
+        },
+    );
+
+    env.defn(
+        "number?",
+        Arity::Count(1),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let resolved = resolve_args(args, env)?;
+            match resolved[0] {
+                Expr::Number(_) => Ok(Expr::boolean(true)),
+                _ => Ok(Expr::boolean(false)),
+            }
+        },
+    );
+
     env
 }
 
@@ -67,5 +100,29 @@ mod tests {
             Ok(Expr::number(3.))
         );
         assert_eq!(eval("(get [1 2 3] 3)", env.clone_ref()), Ok(Expr::nil()));
+    }
+
+    #[test]
+    fn test_range() {
+        let env = Env::with_core_module().into_ref();
+
+        assert_eq!(
+            eval("(range 0 3)", env.clone_ref()),
+            Ok(Expr::vector(&[
+                Expr::number(0.),
+                Expr::number(1.),
+                Expr::number(2.)
+            ]))
+        );
+    }
+
+    #[test]
+    fn test_number_q() {
+        let env = Env::with_core_module().into_ref();
+
+        assert_eq!(
+            eval("[(number? 3.2) (number? \"a\")]", env.clone_ref()),
+            Ok(Expr::vector(&[Expr::boolean(true), Expr::boolean(false)]))
+        );
     }
 }
