@@ -65,10 +65,10 @@ For example, here is an example with `defn` and `fn`:
 ```clojure
 ;; Computes n iterations of the fibonacci sequence.
 (defn fib [n]
-    (def a 0)
-    (def b 1)
+    (var a 0)
+    (var b 1)
     <0 to: n 
-       do: (fn [_] (def c (+ a b))
+       do: (fn [_] (var c (+ a b))
                    (set! a b)
                    (set! b c))>
     a)
