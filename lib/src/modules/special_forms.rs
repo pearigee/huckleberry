@@ -1,7 +1,7 @@
 use crate::{
     env::{Env, EnvRef},
     error::HError,
-    evaluator::eval_expr,
+    evaluator::{eval_expr, eval_exprs},
     expr::{Arity, Expr, Fn, Method},
 };
 
@@ -139,6 +139,50 @@ pub fn special_forms_module() -> Env {
             );
 
             Ok(Expr::nil())
+        },
+    );
+
+    env.defn(
+        "for-each",
+        Arity::Range(2, usize::MAX),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let var = &args[0];
+            let collection = eval_expr(&args[1], env.clone_ref())?;
+
+            let var_name = match var {
+                Expr::Symbol(name) => name,
+                _ => {
+                    return Err(HError::UnexpectedForm(
+                        "Invalid variable name in for-each".to_string(),
+                        var.clone(),
+                    ))
+                }
+            };
+
+            match collection {
+                Expr::Vector(vec) => {
+                    for expr in vec {
+                        let new_env = Env::extend(env.clone_ref()).into_ref();
+                        new_env.def(var_name, expr);
+                        eval_exprs(&args[2..].into(), new_env)?;
+                    }
+                }
+                Expr::Map(map) => {
+                    for (key, value) in map {
+                        let new_env = Env::extend(env.clone_ref()).into_ref();
+                        new_env.def(var_name, Expr::vector(&[key, value]));
+                        eval_exprs(&args[2..].into(), new_env)?;
+                    }
+                }
+                _ => {
+                    return Err(HError::UnexpectedForm(
+                        "Invalid collection".to_string(),
+                        collection,
+                    ))
+                }
+            }
+
+            Ok(Expr::Nil)
         },
     );
 
@@ -367,5 +411,19 @@ mod tests {
         eval("(var f (fn []))", env.clone_ref()).unwrap();
 
         assert_eq!(eval("(f)", env.clone_ref()), Ok(Expr::Nil));
+    }
+
+    #[test]
+    fn test_for_each() {
+        let env = Env::with_core_module().into_ref();
+        eval(
+            "
+            (var a 1)
+            (for-each i <1 to: 6>
+                (set! a (+ a i)))",
+            env.clone_ref(),
+        )
+        .unwrap();
+        assert_eq!(env.get("a"), Ok(Expr::number(16.)));
     }
 }
