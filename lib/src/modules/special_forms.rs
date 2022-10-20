@@ -15,7 +15,7 @@ pub fn special_forms_module() -> Env {
         Arity::Range(1, 2),
         |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             match &args[0] {
-                Expr::Symbol(value) => {
+                Expr::Symbol(value, _) => {
                     env.def(&value, eval_expr(&args[1], env.clone_ref())?);
                     Ok(Expr::Nil)
                 }
@@ -47,7 +47,7 @@ pub fn special_forms_module() -> Env {
         Arity::Count(2),
         |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             match &args[0] {
-                Expr::Symbol(value) => {
+                Expr::Symbol(value, _) => {
                     env.set(&value, eval_expr(&args[1], env.clone_ref())?)?;
                     Ok(Expr::Nil)
                 }
@@ -71,7 +71,7 @@ pub fn special_forms_module() -> Env {
         |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             let name_expr = &args[0];
             let name = match name_expr {
-                Expr::Symbol(value) => value,
+                Expr::Symbol(value, _) => value,
                 invalid => {
                     return Err(HError::UnexpectedForm(
                         "\"defn\" requires a symbol for name".to_string(),
@@ -94,7 +94,7 @@ pub fn special_forms_module() -> Env {
             let selector: Expr = eval_expr(&args[0], env.clone_ref())?;
 
             let raw_args = match &args[1] {
-                Expr::Vector(values) => values,
+                Expr::Vector(values, _) => values,
                 value => {
                     return Err(HError::UnexpectedForm(
                         "Expected an argument vector".to_string(),
@@ -150,7 +150,7 @@ pub fn special_forms_module() -> Env {
             let collection = eval_expr(&args[1], env.clone_ref())?;
 
             let var_name = match var {
-                Expr::Symbol(name) => name,
+                Expr::Symbol(name, _) => name,
                 _ => {
                     return Err(HError::UnexpectedForm(
                         "Invalid variable name in for-each".to_string(),
@@ -160,14 +160,14 @@ pub fn special_forms_module() -> Env {
             };
 
             match collection {
-                Expr::Vector(vec) => {
+                Expr::Vector(vec, _) => {
                     for expr in vec {
                         let new_env = Env::extend(env.clone_ref()).into_ref();
                         new_env.def(var_name, expr);
                         eval_exprs(&args[2..].into(), new_env)?;
                     }
                 }
-                Expr::Map(map) => {
+                Expr::Map(map, _) => {
                     for (key, value) in map {
                         let new_env = Env::extend(env.clone_ref()).into_ref();
                         new_env.def(var_name, Expr::vector(&[key, value]));
@@ -191,7 +191,7 @@ pub fn special_forms_module() -> Env {
 
 fn function(args: &[Expr], env: EnvRef) -> Result<Expr, HError> {
     let fn_args = match &args[0] {
-        Expr::Vector(values) => values,
+        Expr::Vector(values, _) => values,
         value => {
             return Err(HError::UnexpectedForm(
                 "Expected an argument vector".to_string(),
@@ -255,26 +255,20 @@ mod tests {
 
         assert_eq!(method.id, "to do");
         assert_eq!(method.arity, Arity::Count(2));
-        assert_eq!(
-            method.args,
-            vec![Expr::Symbol("n".to_string()), Expr::Symbol("f".to_string())]
-        );
+        assert_eq!(method.args, vec![Expr::symbol("n"), Expr::symbol("f")]);
         assert_eq!(
             method.selector,
             Box::new(Expr::Fn(Fn {
-                id: "[Symbol(\"i\")]_[Symbol(\"i\")]".to_string(),
+                id: "[Symbol(\"i\", {})]_[Symbol(\"i\", {})]".to_string(),
                 arity: Arity::Count(1),
-                args: vec![Expr::Symbol("i".to_string())],
-                function: vec![Expr::Symbol("i".to_string())].into(),
+                args: vec![Expr::symbol("i")],
+                function: vec![Expr::symbol("i")].into(),
                 closure: env.clone_ref(),
             }))
         );
         assert_eq!(
             method.function,
-            vec![Expr::list(&[
-                Expr::Symbol("println".to_string()),
-                Expr::Symbol("num".to_string())
-            ])]
+            vec![Expr::list(&[Expr::symbol("println"), Expr::symbol("num")])]
         );
     }
 
@@ -287,16 +281,13 @@ mod tests {
         match env.get("add").unwrap() {
             Expr::Fn(fun) => {
                 assert_eq!(fun.arity, Arity::Count(2));
-                assert_eq!(
-                    fun.args,
-                    vec![Expr::Symbol("a".to_string()), Expr::Symbol("b".to_string())]
-                );
+                assert_eq!(fun.args, vec![Expr::symbol("a"), Expr::symbol("b")]);
                 assert_eq!(
                     fun.function,
                     vec![Expr::list(&[
-                        Expr::Symbol("+".to_string()),
-                        Expr::Symbol("a".to_string()),
-                        Expr::Symbol("b".to_string())
+                        Expr::symbol("+"),
+                        Expr::symbol("a"),
+                        Expr::symbol("b")
                     ])]
                 );
             }

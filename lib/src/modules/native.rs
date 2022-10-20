@@ -2,7 +2,7 @@ use crate::{
     env::{Env, EnvRef},
     error::HError,
     evaluator::resolve_args,
-    expr::{Arity, Expr},
+    expr::{Arity, Expr, HMap},
     modules::utils::check_num,
 };
 
@@ -71,11 +71,11 @@ pub fn native_module() -> Env {
         |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
             let resolved = resolve_args(args, env)?;
             match &resolved[0] {
-                Expr::Map(map) => match map.get(&resolved[1]) {
+                Expr::Map(map, _) => match map.get(&resolved[1]) {
                     Some(value) => Ok(value.clone()),
                     None => Ok(Expr::Nil),
                 },
-                Expr::Vector(vec) => {
+                Expr::Vector(vec, _) => {
                     let index = match &resolved[1] {
                         Expr::Number(value) => (**value) as usize,
                         invalid => {
@@ -109,6 +109,7 @@ pub fn native_module() -> Env {
                     let max = **max as i64;
                     Ok(Expr::Vector(
                         (min..max).map(|n| Expr::number(n as f64)).collect(),
+                        HMap::new(),
                     ))
                 }
                 (min, max) => Err(HError::UnexpectedForm(
@@ -127,6 +128,20 @@ pub fn native_module() -> Env {
             match resolved[0] {
                 Expr::Number(_) => Ok(Expr::boolean(true)),
                 _ => Ok(Expr::boolean(false)),
+            }
+        },
+    );
+
+    env.defn(
+        "meta",
+        Arity::Count(1),
+        |args: &[Expr], env: EnvRef| -> Result<Expr, HError> {
+            let resolved = resolve_args(args, env)?;
+            match &resolved[0] {
+                Expr::Symbol(_, metadata) => Ok(Expr::Map(metadata.clone(), HMap::new())),
+                Expr::Map(_, metadata) => Ok(Expr::Map(metadata.clone(), HMap::new())),
+                Expr::Vector(_, metadata) => Ok(Expr::Map(metadata.clone(), HMap::new())),
+                _ => Ok(Expr::nil()),
             }
         },
     );

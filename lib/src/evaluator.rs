@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::{
     env::{Env, EnvRef},
     error::HError,
-    expr::{Arity, Expr, Fn, Method, NativeFn},
+    expr::{Arity, Expr, Fn, HMap, Method, NativeFn},
     modules::utils::{is_truthy, method_args, method_id},
     parser::parse,
 };
@@ -57,11 +57,11 @@ pub fn eval_expr(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
                 _ => Err(HError::NotAMethod(id)),
             }
         }
-        Expr::Symbol(value) => match env.get(value) {
+        Expr::Symbol(value, _) => match env.get(value) {
             Ok(expr) => Ok(expr.to_owned()),
             _ => Err(HError::UnboundVar(value.to_string())),
         },
-        Expr::Map(map) => {
+        Expr::Map(map, metadata) => {
             let resolved_map: BTreeMap<Expr, Expr> = map
                 .into_iter()
                 .map(|(key, value)| {
@@ -71,14 +71,14 @@ pub fn eval_expr(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
                     ))
                 })
                 .collect::<Result<_, _>>()?;
-            Ok(Expr::Map(resolved_map))
+            Ok(Expr::Map(resolved_map, metadata.clone()))
         }
-        Expr::Vector(vector) => {
+        Expr::Vector(vector, metadata) => {
             let resolved_vector: Vec<Expr> = vector
                 .into_iter()
                 .map(|value| eval_expr(&value, env.clone_ref()))
                 .collect::<Result<_, _>>()?;
-            Ok(Expr::Vector(resolved_vector))
+            Ok(Expr::Vector(resolved_vector, metadata.clone()))
         }
         _ => Ok(expr.to_owned()),
     }
@@ -86,7 +86,7 @@ pub fn eval_expr(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
 
 pub fn resolve(expr: &Expr, env: EnvRef) -> Result<Expr, HError> {
     match expr {
-        Expr::Symbol(id) => env.get(&id),
+        Expr::Symbol(id, _) => env.get(&id),
         _ => Err(HError::UnexpectedForm(
             "Only symbols are resolvable".to_string(),
             expr.to_owned(),
@@ -153,11 +153,14 @@ impl Callable for Fn {
         let mut arg_env = Env::extend(env.clone_ref());
         for (i, binding) in self.args.iter().enumerate() {
             match binding {
-                Expr::Symbol(ref name) => {
+                Expr::Symbol(ref name, _) => {
                     arg_env.def(name, eval_expr(&args[i], env.clone_ref())?.clone())
                 }
                 Expr::Ampersand => {
-                    arg_env.def(&self.args[i + 1].id(), Expr::Vector(args[i..].to_vec()));
+                    arg_env.def(
+                        &self.args[i + 1].id(),
+                        Expr::Vector(args[i..].to_vec(), HMap::new()),
+                    );
                     break;
                 }
                 _ => {
@@ -188,7 +191,7 @@ impl Callable for Method {
         }
         for (i, binding) in self.args.iter().enumerate() {
             match binding {
-                Expr::Symbol(ref name) => {
+                Expr::Symbol(ref name, _) => {
                     arg_env.def(name, eval_expr(&args[i], env.clone_ref())?.clone())
                 }
                 _ => {

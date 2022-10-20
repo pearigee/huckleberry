@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use crate::{
     error::HError,
-    expr::Expr,
+    expr::{Expr, HMap},
     scanner::{scan, Token, TokenType},
 };
 
@@ -46,8 +46,9 @@ impl Parser {
             )),
             TokenType::LeftSquare => Ok(Expr::Vector(
                 self.parse_vector(TokenType::LeftSquare, TokenType::RightSquare)?,
+                HMap::new(),
             )),
-            TokenType::LeftCurly => Ok(Expr::Map(self.parse_map()?)),
+            TokenType::LeftCurly => Ok(Expr::Map(self.parse_map()?, HMap::new())),
             TokenType::Number(value) => {
                 self.advance();
                 Ok(Expr::number(value))
